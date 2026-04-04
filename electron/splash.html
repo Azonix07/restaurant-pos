@@ -96,23 +96,17 @@
   <script>
     const progress = document.getElementById('progress');
     const status = document.getElementById('status');
-    const steps = [
-      { pct: 15, text: 'Initializing database' },
-      { pct: 35, text: 'Setting up database' },
-      { pct: 55, text: 'Starting server' },
-      { pct: 75, text: 'Loading application' },
-      { pct: 90, text: 'Almost ready' },
-    ];
-    let step = 0;
-    function advance() {
-      if (step < steps.length) {
-        progress.style.width = steps[step].pct + '%';
-        status.innerHTML = steps[step].text + '<span class="dots"></span>';
-        step++;
-        setTimeout(advance, 1500 + Math.random() * 1000);
-      }
+
+    // Called from main process via executeJavaScript
+    function updateStatus(text, pct) {
+      progress.style.width = pct + '%';
+      status.innerHTML = text + '<span class="dots"></span>';
     }
-    setTimeout(advance, 500);
+
+    // Fallback animation if main process hasn't sent updates within 2s
+    let fallbackTimer = setTimeout(() => {
+      updateStatus('Initializing', 5);
+    }, 2000);
   </script>
 </body>
 </html>

@@ -59,7 +59,7 @@ app.set('port', config.port);
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -123,9 +123,11 @@ setupSockets(io);
 const startServer = async () => {
   await connectDB();
 
-  // Start cloud sync service (if configured)
-  const { startSync } = require('./services/cloudSync');
-  startSync().catch(err => console.error('[CloudSync] Init error:', err.message));
+  // Start cloud sync service after a delay (non-blocking)
+  setTimeout(() => {
+    const { startSync } = require('./services/cloudSync');
+    startSync().catch(err => console.error('[CloudSync] Init error:', err.message));
+  }, 5000);
 
   server.listen(config.port, '0.0.0.0', () => {
     const os = require('os');

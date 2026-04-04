@@ -19,7 +19,7 @@ const firstRunFlag = path.join(userDataPath, '.pos-initialized');
 let mainWindow = null;
 let splashWindow = null;
 let backendProcess = null;
-let mongod = null; // MongoMemoryServer instance
+let mongod = null;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -34,8 +34,23 @@ function resolvePath(...segments) {
     : path.join(__dirname, '..', ...segments);
 }
 
+function resolveLocal(file) {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, file)
+    : path.join(__dirname, file);
+}
+
+/** Send a status update to the splash window (if open). */
+function splashStatus(text, pct) {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents
+      .executeJavaScript(`updateStatus("${text}", ${pct})`)
+      .catch(() => {});
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Splash / loading window
+// Splash / loading window  (receives real progress via splashStatus)
 // ---------------------------------------------------------------------------
 function showSplash() {
   splashWindow = new BrowserWindow({
@@ -43,30 +58,23 @@ function showSplash() {
     height: 360,
     frame: false,
     resizable: false,
-    transparent: false,
     alwaysOnTop: true,
     backgroundColor: '#4f46e5',
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
-
-  const splashFile = app.isPackaged
-    ? path.join(process.resourcesPath, 'splash.html')
-    : path.join(__dirname, 'splash.html');
-
-  splashWindow.loadFile(splashFile);
+  splashWindow.loadFile(resolveLocal('splash.html'));
   splashWindow.center();
 }
 
 // ---------------------------------------------------------------------------
-// Embedded MongoDB (persistent data — NOT in-memory)
+// Embedded MongoDB
 // ---------------------------------------------------------------------------
 async function startMongoDB() {
   ensureDir(mongoDataPath);
   ensureDir(mongoBinPath);
 
-  // Configure download location BEFORE requiring the module so its internal
-  // resolvers pick up the env vars immediately.
   process.env.MONGOMS_DOWNLOAD_DIR = mongoBinPath;
+  process.env.MONGOMS_SYSTEM_BINARY = '';       // always use downloaded binary
   process.env.MONGOMS_VERSION = '7.0.14';
 
   const { MongoMemoryServer } = require('mongodb-memory-server-core');
@@ -83,38 +91,30 @@ async function startMongoDB() {
     },
   });
 
-  const uri = mongod.getUri();
-  console.log('[MongoDB] Embedded server started:', uri);
-  return uri;
+  return mongod.getUri();
 }
 
 // ---------------------------------------------------------------------------
-// Database seed (idempotent — only inserts if data is missing)
+// Database seed (idempotent)
 // ---------------------------------------------------------------------------
 function runSeed(mongoUri) {
   return new Promise((resolve) => {
     const seedPath = resolvePath('backend', 'src', 'seed.js');
     const cwd = resolvePath('backend');
-
     const child = spawn(process.execPath, [seedPath], {
-      env: {
-        ...process.env,
-        ELECTRON_RUN_AS_NODE: '1',
-        MONGODB_URI: mongoUri,
-      },
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MONGODB_URI: mongoUri },
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-
     child.stdout.on('data', (d) => console.log('[Seed]', d.toString().trim()));
     child.stderr.on('data', (d) => console.error('[Seed]', d.toString().trim()));
     child.on('close', () => resolve());
-    child.on('error', () => resolve()); // don't block startup on seed failure
+    child.on('error', () => resolve());
   });
 }
 
 // ---------------------------------------------------------------------------
-// Backend Express server (child process using Electron's own Node runtime)
+// Backend Express server
 // ---------------------------------------------------------------------------
 function startBackend(mongoUri) {
   return new Promise((resolve) => {
@@ -133,10 +133,14 @@ function startBackend(mongoUri) {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
+    let resolved = false;
     backendProcess.stdout.on('data', (data) => {
       const text = data.toString();
       console.log('[Backend]', text.trim());
-      if (text.includes('Server Running')) resolve();
+      if (!resolved && text.includes('Server Running')) {
+        resolved = true;
+        resolve();
+      }
     });
 
     backendProcess.stderr.on('data', (d) =>
@@ -145,7 +149,7 @@ function startBackend(mongoUri) {
 
     backendProcess.on('error', (err) => {
       console.error('[Backend] Spawn error:', err.message);
-      resolve(); // don't block — server may already be running externally
+      if (!resolved) { resolved = true; resolve(); }
     });
 
     backendProcess.on('exit', (code) => {
@@ -153,39 +157,29 @@ function startBackend(mongoUri) {
       backendProcess = null;
     });
 
-    // Fallback timeout so the app isn't stuck forever
-    setTimeout(resolve, 20000);
+    // Safety timeout
+    setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 25000);
   });
 }
 
 // ---------------------------------------------------------------------------
-// Wait until the Express health endpoint responds
+// Quick health probe (single attempt, 2s timeout)
 // ---------------------------------------------------------------------------
-function waitForServer(maxAttempts = 40) {
+function healthCheck() {
   return new Promise((resolve) => {
-    let attempts = 0;
-    const check = () => {
-      attempts++;
-      const req = http.get(`${SERVER_URL}/api/health`, (res) => {
-        res.resume();
-        if (res.statusCode === 200) return resolve(true);
-        retry();
-      });
-      req.on('error', retry);
-      req.setTimeout(2000, () => { req.destroy(); retry(); });
-    };
-    const retry = () => {
-      if (attempts < maxAttempts) setTimeout(check, 800);
-      else resolve(false);
-    };
-    check();
+    const req = http.get(`${SERVER_URL}/api/health`, (res) => {
+      res.resume();
+      resolve(res.statusCode === 200);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(2000, () => { req.destroy(); resolve(false); });
   });
 }
 
 // ---------------------------------------------------------------------------
 // Main application window
 // ---------------------------------------------------------------------------
-function createMainWindow() {
+function createMainWindow(serverReady) {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -203,28 +197,34 @@ function createMainWindow() {
     backgroundColor: '#f5f7fa',
   });
 
-  // Always load from the backend server — it serves the React frontend
-  mainWindow.loadURL(SERVER_URL);
+  if (serverReady) {
+    // Server is healthy — load the app directly
+    mainWindow.loadURL(SERVER_URL);
+  } else {
+    // Server isn't ready yet — show loading.html which auto-retries
+    mainWindow.loadFile(resolveLocal('loading.html'));
+  }
 
-  // Inject server URL for the React app
+  // Inject SERVER_URL on every page load (works for both loading.html → redirect and direct load)
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.executeJavaScript(
-      `window.SERVER_URL = "${SERVER_URL}";`
-    );
+    mainWindow.webContents
+      .executeJavaScript(`window.SERVER_URL = "${SERVER_URL}";`)
+      .catch(() => {});
   });
 
-  mainWindow.once('ready-to-show', () => {
-    if (splashWindow) {
-      splashWindow.close();
-      splashWindow = null;
+  // Show the main window and close splash once content has painted
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (!mainWindow.isVisible()) {
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close();
+        splashWindow = null;
+      }
+      mainWindow.show();
+      mainWindow.focus();
     }
-    mainWindow.show();
-    mainWindow.focus();
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+  mainWindow.on('closed', () => { mainWindow = null; });
 }
 
 // ---------------------------------------------------------------------------
@@ -233,34 +233,41 @@ function createMainWindow() {
 app.whenReady().then(async () => {
   showSplash();
 
-  try {
-    // 1. Start embedded MongoDB with persistent storage
-    console.log('[Startup] Starting embedded MongoDB...');
-    const mongoUri = await startMongoDB();
+  let mongoUri = '';
+  let serverReady = false;
 
-    // 2. Seed database on first launch (idempotent)
+  try {
+    // 1. Start embedded MongoDB
+    splashStatus('Starting database', 10);
+    console.log('[Startup] Starting embedded MongoDB...');
+    mongoUri = await startMongoDB();
+    splashStatus('Database ready', 35);
+
+    // 2. Seed on first run
     const isFirstRun = !fs.existsSync(firstRunFlag);
     if (isFirstRun) {
-      console.log('[Startup] First run — seeding database...');
+      splashStatus('Setting up first run', 40);
+      console.log('[Startup] First run — seeding...');
       await runSeed(mongoUri);
       fs.writeFileSync(firstRunFlag, new Date().toISOString());
     }
 
-    // 3. Start the Express backend
-    console.log('[Startup] Starting backend server...');
+    // 3. Start backend
+    splashStatus('Starting server', 50);
+    console.log('[Startup] Starting backend...');
     await startBackend(mongoUri);
+    splashStatus('Server started', 75);
 
-    // 4. Wait for the server to be healthy
-    console.log('[Startup] Waiting for server health check...');
-    const ok = await waitForServer();
-    if (!ok) console.warn('[Startup] Server health check timed out — opening anyway');
-
-    console.log('[Startup] Ready!');
+    // 4. One quick health check
+    serverReady = await healthCheck();
+    splashStatus(serverReady ? 'Ready' : 'Finishing up', 95);
   } catch (err) {
-    console.error('[Startup] Error during initialization:', err);
+    console.error('[Startup] Error:', err);
   }
 
-  createMainWindow();
+  // 5. Open the main window immediately — it will either load the app
+  //    or show loading.html which polls until the server is up
+  createMainWindow(serverReady);
 });
 
 app.on('window-all-closed', () => {
@@ -268,23 +275,27 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+  if (BrowserWindow.getAllWindows().length === 0) createMainWindow(true);
 });
 
 app.on('before-quit', () => {
-  // Kill the backend child process
   if (backendProcess) {
-    try { backendProcess.kill(); } catch (_) {}
+    try {
+      // On Windows, child processes need SIGTERM or taskkill
+      if (process.platform === 'win32') {
+        spawn('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t']);
+      } else {
+        backendProcess.kill();
+      }
+    } catch (_) {}
     backendProcess = null;
   }
-  // Stop embedded MongoDB (fire-and-forget; OS cleans up on exit)
   if (mongod) {
-    mongod.stop().catch(() => {});
+    mongod.stop({ doCleanup: false }).catch(() => {});
     mongod = null;
   }
 });
 
-// Make sure child processes are cleaned up on unexpected exits
 process.on('exit', () => {
   if (backendProcess) try { backendProcess.kill(); } catch (_) {}
 });

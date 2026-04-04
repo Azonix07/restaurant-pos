@@ -32,7 +32,8 @@
     "files": [
       "main.js",
       "preload.js",
-      "splash.html"
+      "splash.html",
+      "loading.html"
     ],
     "extraResources": [
       {

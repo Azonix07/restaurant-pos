@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurant POS</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f7fa;
+    color: #1e293b;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .card {
+    text-align: center;
+    padding: 48px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  p { font-size: 13px; color: #64748b; }
+  .retry { display: none; margin-top: 20px; }
+  .retry button {
+    background: #4f46e5; color: #fff; border: none;
+    padding: 10px 28px; border-radius: 8px; font-size: 14px;
+    cursor: pointer;
+  }
+  .retry button:hover { background: #4338ca; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner" id="spinner"></div>
+    <h2 id="title">Connecting to server...</h2>
+    <p id="msg">Please wait while the application starts</p>
+    <div class="retry" id="retryBox">
+      <button onclick="tryConnect()">Retry</button>
+    </div>
+  </div>
+  <script>
+    const SERVER = 'http://localhost:5001';
+    let attempts = 0;
+    function tryConnect() {
+      attempts++;
+      document.getElementById('spinner').style.display = 'block';
+      document.getElementById('retryBox').style.display = 'none';
+      document.getElementById('title').textContent = 'Connecting to server...';
+      document.getElementById('msg').textContent = 'Attempt ' + attempts;
+      fetch(SERVER + '/api/health', { signal: AbortSignal.timeout(3000) })
+        .then(r => { if (r.ok) window.location.href = SERVER; else retry(); })
+        .catch(() => retry());
+    }
+    function retry() {
+      if (attempts < 60) {
+        setTimeout(tryConnect, 1500);
+      } else {
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('title').textContent = 'Could not connect';
+        document.getElementById('msg').textContent = 'The server is taking too long to start.';
+        document.getElementById('retryBox').style.display = 'block';
+      }
+    }
+    setTimeout(tryConnect, 500);
+  </script>
+</body>
+</html>
