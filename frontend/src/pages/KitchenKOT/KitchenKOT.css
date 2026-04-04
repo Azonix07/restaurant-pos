@@ -1,0 +1,109 @@
+.kot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.kot-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.kot-card.urgent-warning {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px #f59e0b;
+}
+
+.kot-card.urgent-critical {
+  border-color: var(--danger, #ef4444);
+  box-shadow: 0 0 0 2px var(--danger, #ef4444);
+  animation: urgentPulse 1.5s infinite;
+}
+
+.kot-card.kot-delta {
+  border-left: 4px solid #f59e0b;
+}
+
+@keyframes urgentPulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--danger, #ef4444); }
+  50% { box-shadow: 0 0 8px 2px var(--danger, #ef4444); }
+}
+
+.kot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.kot-number {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.kot-info {
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.kot-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.kot-items {
+  margin-bottom: 12px;
+}
+
+.kot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border, #e5e7eb);
+}
+
+.kot-item:last-child { border-bottom: none; }
+
+.kot-item.completed { opacity: 0.5; text-decoration: line-through; }
+.kot-item.cancelled { opacity: 0.3; text-decoration: line-through; }
+
+.kot-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kot-item-qty {
+  font-weight: 700;
+  min-width: 30px;
+}
+
+.kot-item-name { font-weight: 500; }
+
+.kot-item-notes {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.kot-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.badge-kitchen { background: #22c55e; color: white; }
+.badge-bakery { background: #f59e0b; color: white; }
+.badge-bar { background: #8b5cf6; color: white; }
+.badge-desserts { background: #ec4899; color: white; }

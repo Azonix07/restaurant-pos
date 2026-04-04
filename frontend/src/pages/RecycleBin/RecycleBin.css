@@ -1,0 +1,16 @@
+.recycle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--border, #eee);
+}
+
+.recycle-item:last-child {
+  border-bottom: none;
+}
+
+.recycle-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+}

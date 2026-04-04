@@ -1,0 +1,30 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-body);
+}
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width, 260px);
+  padding: 0 32px 28px 32px;
+  min-height: 100vh;
+  max-width: calc(100vw - var(--sidebar-width, 260px));
+  overflow-x: hidden;
+}
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 14px 0;
+  margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  background: var(--bg-body);
+  z-index: 50;
+}
+
+.topbar-spacer {
+  flex: 1;
+}

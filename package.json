@@ -1,0 +1,20 @@
+{
+  "name": "restaurant-pos-system",
+  "version": "1.0.0",
+  "description": "Desktop Restaurant POS System with LAN Multi-Device Support",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install && cd ../electron && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:electron": "cd electron && npm start",
+    "build:frontend": "cd frontend && npm run build",
+    "build:desktop": "cd frontend && npm run build && cd ../electron && npm run build",
+    "build:desktop:win": "cd frontend && npm run build && cd ../electron && npm run build:win",
+    "build:desktop:mac": "cd frontend && npm run build && cd ../electron && npm run build:mac",
+    "build:desktop:linux": "cd frontend && npm run build && cd ../electron && npm run build:linux",
+    "seed": "cd backend && node src/seed.js",
+    "start:server": "cd backend && npm start",
+    "backup": "cd backend && npm run backup"
+  }
+}

@@ -1,0 +1,18 @@
+.platform-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.platform-badge.swiggy {
+  background: #fc8019;
+  color: #fff;
+}
+
+.platform-badge.zomato {
+  background: #e23744;
+  color: #fff;
+}

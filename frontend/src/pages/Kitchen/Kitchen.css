@@ -1,0 +1,126 @@
+.kitchen-page {
+  min-height: 100vh;
+}
+
+.kitchen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.kitchen-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  overflow: hidden;
+}
+
+.kitchen-card.time-critical {
+  border-color: var(--danger);
+  animation: pulse-border 2s infinite;
+}
+
+.kitchen-card.time-warning {
+  border-color: var(--warning);
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: var(--danger); }
+  50% { border-color: transparent; }
+}
+
+.kitchen-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-body);
+  border-bottom: 1px solid var(--border);
+}
+
+.kitchen-order-num {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.kitchen-table {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: white;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.time-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.time-badge.time-ok { background: var(--success); color: #fff; }
+.time-badge.time-warning { background: var(--warning); color: #333; }
+.time-badge.time-critical { background: var(--danger); color: #fff; }
+
+.kitchen-items {
+  padding: 8px;
+}
+
+.kitchen-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.kitchen-item.placed {
+  background: var(--info-bg);
+}
+
+.kitchen-item.preparing {
+  background: var(--warning-bg);
+}
+
+.kitchen-item.ready {
+  background: var(--success-bg);
+  opacity: 0.7;
+}
+
+.kitchen-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.kitchen-item-qty {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  min-width: 30px;
+}
+
+.kitchen-item-name {
+  font-weight: 500;
+}
+
+.kitchen-item-notes {
+  font-size: 11px;
+  color: var(--warning);
+  font-style: italic;
+}
+
+.kitchen-item-actions {
+  flex-shrink: 0;
+}
+
+.kitchen-card-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

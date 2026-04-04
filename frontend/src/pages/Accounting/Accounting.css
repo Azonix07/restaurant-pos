@@ -1,0 +1,32 @@
+.pl-section {
+  margin-bottom: 24px;
+}
+
+.pl-section h4 {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pl-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.pl-amount {
+  font-weight: 500;
+}
+
+.pl-amount.danger {
+  color: var(--danger);
+}
+
+.pl-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-top: 2px solid var(--border);
+  font-size: 20px;
+  font-weight: 700;
+}

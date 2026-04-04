@@ -1,0 +1,12 @@
+.row-warning {
+  background: rgba(245, 158, 11, 0.06) !important;
+}
+
+.stock-card {
+  border-left: 4px solid var(--accent);
+}
+
+.recipe-ingredients {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}

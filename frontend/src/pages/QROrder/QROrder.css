@@ -1,0 +1,125 @@
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.qr-card {
+  text-align: center;
+}
+
+.qr-image-container {
+  padding: 16px 0;
+}
+
+.qr-image {
+  width: 180px;
+  height: 180px;
+}
+
+.qr-placeholder {
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  margin: 0 auto;
+  font-size: 13px;
+}
+
+/* Customer ordering page */
+.customer-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.customer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.table-badge {
+  background: var(--accent);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.customer-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 120px;
+}
+
+.customer-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.customer-menu-item .veg-dot {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.customer-cart {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  padding: 16px 20px;
+  border-top: 2px solid var(--accent);
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.customer-success {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.customer-success h1 {
+  font-size: 36px;
+  margin-bottom: 16px;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.cat-tab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cat-tab.active,
+.cat-tab:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
