@@ -57,6 +57,9 @@ const SOCKET_EVENTS = {
   // Sync events
   SYNC_REQUEST: 'sync:request',
   SYNC_COMPLETE: 'sync:complete',
+  // Menu events
+  MENU_UPDATE: 'menu:update',
+  MENU_DELETE: 'menu:delete',
 };
 
 const GST_RATES = {

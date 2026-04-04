@@ -33,7 +33,10 @@
       "main.js",
       "preload.js",
       "splash.html",
-      "loading.html"
+      "loading.html",
+      "icon.png",
+      "icon.ico",
+      "icon.icns"
     ],
     "extraResources": [
       {
@@ -60,10 +63,12 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "icon.icns"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "icon.ico"
     },
     "nsis": {
       "oneClick": false,

@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const config = require('../config');
 const Order = require('../models/Order');
 const Expense = require('../models/Expense');
+const models = require('../models');
 
 exports.createBackup = async (req, res, next) => {
   try {
@@ -70,6 +71,69 @@ exports.sendDailyReport = async (req, res, next) => {
     });
 
     res.json({ message: 'Daily report sent successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── Data Export (JSON) ──────────────────────────────────
+// Exports ALL collections as a single JSON file for migration / backup
+exports.exportData = async (req, res, next) => {
+  try {
+    const exportPayload = {
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+      collections: {},
+    };
+
+    // Export every registered model
+    for (const [name, Model] of Object.entries(models)) {
+      try {
+        const docs = await Model.find({}).lean();
+        exportPayload.collections[name] = docs;
+      } catch (_) {
+        // Some models might fail if the collection doesn't exist yet
+        exportPayload.collections[name] = [];
+      }
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="pos-data-${Date.now()}.json"`);
+    res.json(exportPayload);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── Data Import (JSON) ──────────────────────────────────
+// Imports a previously exported JSON file — merges by _id (upsert)
+exports.importData = async (req, res, next) => {
+  try {
+    const data = req.body;
+    if (!data || !data.collections) {
+      return res.status(400).json({ message: 'Invalid import file. Expected { collections: { ... } }' });
+    }
+
+    const results = {};
+    for (const [name, docs] of Object.entries(data.collections)) {
+      const Model = models[name];
+      if (!Model || !Array.isArray(docs)) continue;
+
+      let upserted = 0;
+      for (const doc of docs) {
+        try {
+          await Model.updateOne(
+            { _id: doc._id },
+            { $set: doc },
+            { upsert: true, setDefaultsOnInsert: true }
+          );
+          upserted++;
+        } catch (_) { /* skip invalid docs */ }
+      }
+      results[name] = upserted;
+    }
+
+    res.json({ message: 'Data imported successfully', results });
   } catch (error) {
     next(error);
   }

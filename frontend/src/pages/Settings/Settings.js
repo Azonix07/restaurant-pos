@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { FiPlus, FiX, FiDownload, FiUpload, FiMail, FiSave, FiWifi, FiCloud, FiRefreshCw } from 'react-icons/fi';
+import { FiPlus, FiX, FiDownload, FiUpload, FiMail, FiSave, FiWifi, FiCloud, FiRefreshCw, FiEdit2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useConnectionStatus from '../../hooks/useConnectionStatus';
 import { getOfflineQueue, clearOfflineQueue } from '../../utils/offlineStorage';
@@ -15,8 +15,11 @@ const Settings = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showEditMenu, setShowEditMenu] = useState(false);
+  const [editItem, setEditItem] = useState(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'waiter', phone: '' });
   const [menuForm, setMenuForm] = useState({ name: '', category: '', price: '', isVeg: true, gstCategory: 'food_non_ac', preparationTime: 15, description: '' });
+  const [menuSearch, setMenuSearch] = useState('');
   const { hasRole } = useAuth();
 
   useEffect(() => {
@@ -75,11 +78,71 @@ const Settings = () => {
   };
 
   const deleteMenuItem = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this menu item?')) return;
     try {
       await api.delete(`/menu/${id}`);
       toast.success('Deleted');
       fetchMenu();
     } catch (err) { toast.error('Failed'); }
+  };
+
+  const openEditMenu = (item) => {
+    setEditItem({
+      _id: item._id,
+      name: item.name,
+      category: item.category,
+      price: item.price,
+      isVeg: item.isVeg,
+      gstCategory: item.gstCategory || 'food_non_ac',
+      preparationTime: item.preparationTime || 15,
+      description: item.description || '',
+    });
+    setShowEditMenu(true);
+  };
+
+  const updateMenuItem = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/menu/${editItem._id}`, {
+        ...editItem,
+        price: parseFloat(editItem.price),
+        preparationTime: parseInt(editItem.preparationTime, 10),
+      });
+      toast.success('Menu item updated');
+      setShowEditMenu(false);
+      setEditItem(null);
+      fetchMenu();
+    } catch (err) { toast.error(err.response?.data?.message || 'Update failed'); }
+  };
+
+  const exportData = async () => {
+    try {
+      const res = await api.get('/system/export');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pos-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Data exported successfully');
+    } catch (err) { toast.error('Export failed'); }
+  };
+
+  const importData = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.collections) throw new Error('Invalid format');
+      if (!window.confirm('This will merge imported data with existing data. Continue?')) return;
+      const res = await api.post('/system/import', data);
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error(err.message === 'Invalid format' ? 'Invalid file format' : 'Import failed');
+    }
+    e.target.value = '';
   };
 
   const createBackup = async () => {
@@ -155,19 +218,27 @@ const Settings = () => {
         <div className="card">
           <div className="flex-between mb-16">
             <h3>Menu Management</h3>
-            <button className="btn btn-primary" onClick={() => setShowAddMenu(true)}><FiPlus /> Add Item</button>
+            <div className="flex gap-8">
+              <input className="input" placeholder="Search menu..." value={menuSearch} onChange={e => setMenuSearch(e.target.value)} style={{ width: 200 }} />
+              <button className="btn btn-primary" onClick={() => setShowAddMenu(true)}><FiPlus /> Add Item</button>
+            </div>
           </div>
           <table className="data-table">
             <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Type</th><th>Available</th><th>Actions</th></tr></thead>
             <tbody>
-              {menuItems.map(item => (
+              {menuItems.filter(item => !menuSearch || item.name.toLowerCase().includes(menuSearch.toLowerCase()) || item.category.toLowerCase().includes(menuSearch.toLowerCase())).map(item => (
                 <tr key={item._id}>
                   <td>{item.name}</td>
                   <td>{item.category}</td>
                   <td>₹{item.price}</td>
                   <td>{item.isVeg ? '🟢 Veg' : '🔴 Non-Veg'}</td>
                   <td><button className={`btn btn-sm ${item.isAvailable ? 'btn-success' : 'btn-danger'}`} onClick={() => toggleAvailability(item._id)}>{item.isAvailable ? 'Yes' : 'No'}</button></td>
-                  <td><button className="btn btn-danger btn-sm" onClick={() => deleteMenuItem(item._id)}>Delete</button></td>
+                  <td>
+                    <div className="flex gap-4">
+                      <button className="btn btn-secondary btn-sm" onClick={() => openEditMenu(item)}><FiEdit2 /> Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteMenuItem(item._id)}>Delete</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -201,6 +272,35 @@ const Settings = () => {
               </div>
             </div>
           )}
+
+          {showEditMenu && editItem && (
+            <div className="modal-overlay" onClick={() => setShowEditMenu(false)}>
+              <div className="modal" onClick={e => e.stopPropagation()}>
+                <div className="flex-between mb-16"><h2>Edit Menu Item</h2><button className="btn btn-secondary btn-sm" onClick={() => setShowEditMenu(false)}><FiX /></button></div>
+                <form onSubmit={updateMenuItem}>
+                  <div className="input-group"><label>Name</label><input className="input" required value={editItem.name} onChange={e => setEditItem({ ...editItem, name: e.target.value })} /></div>
+                  <div className="input-group"><label>Category</label><input className="input" required value={editItem.category} onChange={e => setEditItem({ ...editItem, category: e.target.value })} /></div>
+                  <div className="input-group"><label>Price (₹)</label><input className="input" type="number" min="0" step="0.01" required value={editItem.price} onChange={e => setEditItem({ ...editItem, price: e.target.value })} /></div>
+                  <div className="input-group"><label>Type</label>
+                    <select className="input" value={editItem.isVeg} onChange={e => setEditItem({ ...editItem, isVeg: e.target.value === 'true' })}>
+                      <option value="true">Veg</option><option value="false">Non-Veg</option>
+                    </select>
+                  </div>
+                  <div className="input-group"><label>GST Category</label>
+                    <select className="input" value={editItem.gstCategory} onChange={e => setEditItem({ ...editItem, gstCategory: e.target.value })}>
+                      <option value="food_non_ac">Food (Non-AC) - 5%</option>
+                      <option value="food_ac">Food (AC) - 5%</option>
+                      <option value="beverage">Beverage - 18%</option>
+                      <option value="alcohol">Alcohol - 28%</option>
+                    </select>
+                  </div>
+                  <div className="input-group"><label>Prep Time (min)</label><input className="input" type="number" value={editItem.preparationTime} onChange={e => setEditItem({ ...editItem, preparationTime: e.target.value })} /></div>
+                  <div className="input-group"><label>Description</label><textarea className="input" rows="2" value={editItem.description} onChange={e => setEditItem({ ...editItem, description: e.target.value })} /></div>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%' }}><FiSave /> Update Item</button>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -219,6 +319,19 @@ const Settings = () => {
             <h3 className="mb-16">Notifications</h3>
             <p className="text-secondary mb-16">Send daily summary report via email.</p>
             <button className="btn btn-primary" onClick={sendReport}><FiMail /> Send Daily Report</button>
+          </div>
+          <div className="card">
+            <h3 className="mb-16">Export Data</h3>
+            <p className="text-secondary mb-16">Download all restaurant data as JSON. Use this to migrate to another system or keep an offline backup.</p>
+            <button className="btn btn-primary" onClick={exportData}><FiDownload /> Export All Data (JSON)</button>
+          </div>
+          <div className="card">
+            <h3 className="mb-16">Import Data</h3>
+            <p className="text-secondary mb-16">Import data from a previously exported JSON file. Existing records are merged by ID.</p>
+            <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+              <FiUpload /> Import Data (JSON)
+              <input type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
+            </label>
           </div>
         </div>
       )}

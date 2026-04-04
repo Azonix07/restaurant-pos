@@ -1,4 +1,5 @@
 const MenuItem = require('../models/MenuItem');
+const { SOCKET_EVENTS } = require('../../../shared/constants');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -28,6 +29,8 @@ exports.getCategories = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const item = await MenuItem.create(req.body);
+    const io = req.app.get('io');
+    if (io) io.emit(SOCKET_EVENTS.MENU_UPDATE, { action: 'create', item });
     res.status(201).json({ item });
   } catch (error) {
     next(error);
@@ -41,6 +44,8 @@ exports.update = async (req, res, next) => {
       runValidators: true,
     });
     if (!item) return res.status(404).json({ message: 'Menu item not found' });
+    const io = req.app.get('io');
+    if (io) io.emit(SOCKET_EVENTS.MENU_UPDATE, { action: 'update', item });
     res.json({ item });
   } catch (error) {
     next(error);
@@ -51,6 +56,8 @@ exports.remove = async (req, res, next) => {
   try {
     const item = await MenuItem.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ message: 'Menu item not found' });
+    const io = req.app.get('io');
+    if (io) io.emit(SOCKET_EVENTS.MENU_DELETE, { itemId: req.params.id });
     res.json({ message: 'Item deleted' });
   } catch (error) {
     next(error);
@@ -64,6 +71,8 @@ exports.toggleAvailability = async (req, res, next) => {
 
     item.isAvailable = !item.isAvailable;
     await item.save();
+    const io = req.app.get('io');
+    if (io) io.emit(SOCKET_EVENTS.MENU_UPDATE, { action: 'toggle', item });
     res.json({ item });
   } catch (error) {
     next(error);
