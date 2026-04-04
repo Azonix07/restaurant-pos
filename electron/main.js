@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
 
@@ -21,6 +21,17 @@ let splashWindow = null;
 let backendProcess = null;
 let mongod = null;
 
+// Prevent multiple instances — avoids port conflicts from duplicate launches
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) app.quit();
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -35,9 +46,39 @@ function resolvePath(...segments) {
 }
 
 function resolveLocal(file) {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, file)
-    : path.join(__dirname, file);
+  // __dirname works in both dev and packaged (asar) mode — Electron reads from asar transparently
+  return path.join(__dirname, file);
+}
+
+/** Kill any process listening on a given port (cleanup from previous crash). */
+function freePort(port) {
+  return new Promise((resolve) => {
+    if (process.platform === 'win32') {
+      exec(`netstat -ano | findstr :${port} | findstr LISTENING`, (err, stdout) => {
+        if (!err && stdout && stdout.trim()) {
+          const pids = [...new Set(
+            stdout.trim().split('\n')
+              .map(l => l.trim().split(/\s+/).pop())
+              .filter(p => /^\d+$/.test(p) && p !== '0')
+          )];
+          let remaining = pids.length;
+          if (remaining === 0) return resolve();
+          pids.forEach(pid => {
+            exec(`taskkill /f /pid ${pid}`, () => {
+              if (--remaining <= 0) resolve();
+            });
+          });
+        } else resolve();
+      });
+    } else {
+      exec(`lsof -ti:${port}`, (err, stdout) => {
+        if (!err && stdout && stdout.trim()) {
+          const pids = stdout.trim().split('\n').join(' ');
+          exec(`kill -9 ${pids}`, () => resolve());
+        } else resolve();
+      });
+    }
+  });
 }
 
 /** Send a status update to the splash window (if open). */
@@ -176,6 +217,14 @@ function healthCheck() {
   });
 }
 
+async function waitForServer(retries = 5, interval = 1500) {
+  for (let i = 0; i < retries; i++) {
+    if (await healthCheck()) return true;
+    if (i < retries - 1) await new Promise(r => setTimeout(r, interval));
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Main application window
 // ---------------------------------------------------------------------------
@@ -237,6 +286,11 @@ app.whenReady().then(async () => {
   let serverReady = false;
 
   try {
+    // 0. Free ports from any crashed previous instance
+    splashStatus('Preparing', 5);
+    await freePort(SERVER_PORT);
+    await freePort(27099);
+
     // 1. Start embedded MongoDB
     splashStatus('Starting database', 10);
     console.log('[Startup] Starting embedded MongoDB...');
@@ -258,8 +312,8 @@ app.whenReady().then(async () => {
     await startBackend(mongoUri);
     splashStatus('Server started', 75);
 
-    // 4. One quick health check
-    serverReady = await healthCheck();
+    // 4. Wait for server with retries
+    serverReady = await waitForServer(5, 1500);
     splashStatus(serverReady ? 'Ready' : 'Finishing up', 95);
   } catch (err) {
     console.error('[Startup] Error:', err);
