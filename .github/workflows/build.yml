@@ -24,6 +24,8 @@ jobs:
           cd frontend
           npm install
           npm run build
+        env:
+          CI: false
 
       - name: Install electron dependencies
         run: cd electron && npm install
@@ -58,6 +60,8 @@ jobs:
           cd frontend
           npm install
           npm run build
+        env:
+          CI: false
 
       - name: Install electron dependencies
         run: cd electron && npm install
@@ -90,6 +94,8 @@ jobs:
           cd frontend
           npm install
           npm run build
+        env:
+          CI: false
 
       - name: Install electron dependencies
         run: cd electron && npm install
