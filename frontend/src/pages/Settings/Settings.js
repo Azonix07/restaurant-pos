@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { FiPlus, FiX, FiDownload, FiUpload, FiMail, FiSave, FiWifi, FiCloud, FiRefreshCw, FiEdit2 } from 'react-icons/fi';
+import { FiPlus, FiX, FiDownload, FiUpload, FiMail, FiSave, FiWifi, FiCloud, FiRefreshCw, FiEdit2, FiShield } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useConnectionStatus from '../../hooks/useConnectionStatus';
 import { getOfflineQueue, clearOfflineQueue } from '../../utils/offlineStorage';
@@ -20,6 +20,7 @@ const Settings = () => {
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'waiter', phone: '' });
   const [menuForm, setMenuForm] = useState({ name: '', category: '', price: '', isVeg: true, gstCategory: 'food_non_ac', preparationTime: 15, description: '' });
   const [menuSearch, setMenuSearch] = useState('');
+  const [showPermissions, setShowPermissions] = useState(null);
   const { hasRole } = useAuth();
 
   useEffect(() => {
@@ -57,6 +58,47 @@ const Settings = () => {
       await api.put(`/auth/users/${user._id}`, { isActive: !user.isActive });
       fetchUsers();
     } catch (err) { toast.error('Failed'); }
+  };
+
+  const openPermissions = (user) => {
+    setShowPermissions({
+      _id: user._id,
+      name: user.name,
+      role: user.role,
+      permissions: user.permissions || {
+        canEditPrice: false, canGiveDiscount: false, maxDiscountPercent: 0,
+        canCancelOrder: false, canDeleteKOT: false, canViewReports: false,
+        canExportData: false, canModifyMenu: false, canManageInventory: false,
+        canProcessRefund: false, canOpenCounter: false, canCloseCounter: false,
+      },
+      limits: user.limits || { maxOrderValue: 0, maxDailyDiscount: 0, maxSingleDiscount: 0 },
+    });
+  };
+
+  const savePermissions = async () => {
+    try {
+      await api.put(`/auth/users/${showPermissions._id}`, {
+        permissions: showPermissions.permissions,
+        limits: showPermissions.limits,
+      });
+      toast.success('Permissions saved');
+      setShowPermissions(null);
+      fetchUsers();
+    } catch (err) { toast.error('Failed to save permissions'); }
+  };
+
+  const togglePerm = (key) => {
+    setShowPermissions(prev => ({
+      ...prev,
+      permissions: { ...prev.permissions, [key]: !prev.permissions[key] },
+    }));
+  };
+
+  const updateLimit = (key, value) => {
+    setShowPermissions(prev => ({
+      ...prev,
+      limits: { ...prev.limits, [key]: parseFloat(value) || 0 },
+    }));
   };
 
   const addMenuItem = async (e) => {
@@ -186,7 +228,12 @@ const Settings = () => {
                   <td>{user.email}</td>
                   <td style={{ textTransform: 'capitalize' }}>{user.role}</td>
                   <td><span className={`badge ${user.isActive ? 'badge-completed' : 'badge-cancelled'}`}>{user.isActive ? 'Active' : 'Inactive'}</span></td>
-                  <td><button className={`btn btn-sm ${user.isActive ? 'btn-danger' : 'btn-success'}`} onClick={() => toggleUserActive(user)}>{user.isActive ? 'Deactivate' : 'Activate'}</button></td>
+                  <td>
+                    <div className="flex gap-4">
+                      <button className={`btn btn-sm ${user.isActive ? 'btn-danger' : 'btn-success'}`} onClick={() => toggleUserActive(user)}>{user.isActive ? 'Deactivate' : 'Activate'}</button>
+                      <button className="btn btn-sm btn-secondary" onClick={() => openPermissions(user)}><FiShield /> Permissions</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -208,6 +255,39 @@ const Settings = () => {
                   <div className="input-group"><label>Phone</label><input className="input" value={userForm.phone} onChange={e => setUserForm({ ...userForm, phone: e.target.value })} /></div>
                   <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Create User</button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {showPermissions && (
+            <div className="modal-overlay" onClick={() => setShowPermissions(null)}>
+              <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 550 }}>
+                <div className="flex-between mb-16"><h2><FiShield style={{ marginRight: 6 }} />Permissions: {showPermissions.name}</h2><button className="btn btn-secondary btn-sm" onClick={() => setShowPermissions(null)}><FiX /></button></div>
+                <p className="text-secondary mb-16">Role: <strong style={{ textTransform: 'capitalize' }}>{showPermissions.role}</strong> {showPermissions.role === 'admin' && '(has all permissions by default)'}</p>
+                <h4 className="mb-8">Permissions</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                  {[
+                    ['canEditPrice', 'Edit Menu Prices'], ['canGiveDiscount', 'Give Discounts'],
+                    ['canCancelOrder', 'Cancel Orders'], ['canDeleteKOT', 'Delete KOTs'],
+                    ['canViewReports', 'View Reports'], ['canExportData', 'Export Data'],
+                    ['canModifyMenu', 'Modify Menu'], ['canManageInventory', 'Manage Inventory'],
+                    ['canProcessRefund', 'Process Refunds'], ['canOpenCounter', 'Open Counter'],
+                    ['canCloseCounter', 'Close Counter'],
+                  ].map(([key, label]) => (
+                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: 6, borderRadius: 6, background: showPermissions.permissions[key] ? '#ecfdf5' : 'var(--bg-input)' }}>
+                      <input type="checkbox" checked={showPermissions.permissions[key] || false} onChange={() => togglePerm(key)} />
+                      <span style={{ fontSize: 13 }}>{label}</span>
+                    </label>
+                  ))}
+                </div>
+                {showPermissions.permissions.canGiveDiscount && (
+                  <div className="input-group"><label>Max Discount % per Order</label><input className="input" type="number" min="0" max="100" value={showPermissions.permissions.maxDiscountPercent || 0} onChange={e => setShowPermissions(prev => ({ ...prev, permissions: { ...prev.permissions, maxDiscountPercent: parseFloat(e.target.value) || 0 } }))} /></div>
+                )}
+                <h4 className="mb-8 mt-16">Daily Limits</h4>
+                <div className="input-group"><label>Max Single Order Value (₹) · 0 = unlimited</label><input className="input" type="number" min="0" value={showPermissions.limits.maxOrderValue || 0} onChange={e => updateLimit('maxOrderValue', e.target.value)} /></div>
+                <div className="input-group"><label>Max Total Discount per Day (₹)</label><input className="input" type="number" min="0" value={showPermissions.limits.maxDailyDiscount || 0} onChange={e => updateLimit('maxDailyDiscount', e.target.value)} /></div>
+                <div className="input-group"><label>Max Discount per Order (₹)</label><input className="input" type="number" min="0" value={showPermissions.limits.maxSingleDiscount || 0} onChange={e => updateLimit('maxSingleDiscount', e.target.value)} /></div>
+                <button className="btn btn-primary" style={{ width: '100%' }} onClick={savePermissions}><FiSave /> Save Permissions & Limits</button>
               </div>
             </div>
           )}

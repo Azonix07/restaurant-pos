@@ -3,6 +3,7 @@ const Table = require('../models/Table');
 const Transaction = require('../models/Transaction');
 const Customer = require('../models/Customer');
 const BillSequence = require('../models/BillSequence');
+const AuditLog = require('../models/AuditLog');
 const { generateOrderNumber } = require('../utils/orderNumber');
 const { GST_RATES } = require('../../../shared/constants');
 const kotController = require('./kotController');
@@ -144,6 +145,7 @@ exports.getKitchenOrders = async (req, res, next) => {
       status: { $in: ['placed', 'confirmed', 'preparing'] },
     })
       .populate('table')
+      .populate('items.menuItem', 'name image kitchenSection')
       .sort({ createdAt: 1 });
     res.json({ orders });
   } catch (error) {
@@ -168,6 +170,19 @@ exports.updateStatus = async (req, res, next) => {
       }
     }
     await order.save();
+
+    // Audit log for cancellations and critical status changes
+    if (status === 'cancelled' || status === 'completed') {
+      await AuditLog.create({
+        action: status === 'cancelled' ? 'cancel' : 'complete',
+        module: 'order',
+        documentId: order._id,
+        documentNumber: order.orderNumber,
+        description: `Order ${order.orderNumber} marked ${status}`,
+        user: req.user?._id,
+        userName: req.user?.name,
+      });
+    }
 
     const io = req.app.get('io');
     if (io) {
@@ -329,6 +344,17 @@ exports.processPayment = async (req, res, next) => {
     if (io) {
       io.emit('order:statusChange', { orderId: order._id, status: 'completed' });
     }
+
+    // Audit log for payment
+    await AuditLog.create({
+      action: 'payment',
+      module: 'order',
+      documentId: order._id,
+      documentNumber: order.billNumber || order.orderNumber,
+      description: `Payment ₹${order.total} via ${paymentMethod}${discount > 0 ? ` (discount: ₹${discount})` : ''}`,
+      user: req.user._id,
+      userName: req.user.name,
+    });
 
     res.json({ order, message: 'Payment processed successfully' });
   } catch (error) {

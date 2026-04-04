@@ -62,10 +62,18 @@ exports.getUsers = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   try {
-    const { name, role, phone, isActive } = req.body;
+    const { name, role, phone, isActive, permissions, limits } = req.body;
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (role !== undefined) updateData.role = role;
+    if (phone !== undefined) updateData.phone = phone;
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (permissions !== undefined) updateData.permissions = permissions;
+    if (limits !== undefined) updateData.limits = limits;
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { name, role, phone, isActive },
+      updateData,
       { new: true, runValidators: true }
     ).select('-password');
 

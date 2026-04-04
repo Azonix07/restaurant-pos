@@ -36,6 +36,10 @@ const stockRoutes = require('./routes/stock');
 const wastageRoutes = require('./routes/wastage');
 const monitoringRoutes = require('./routes/monitoring');
 const syncRoutes = require('./routes/sync');
+const counterRoutes = require('./routes/counter');
+const productionRoutes = require('./routes/production');
+const billPrintRoutes = require('./routes/billPrint');
+const fraudRoutes = require('./routes/fraud');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -88,6 +92,10 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/wastage', wastageRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/counter', counterRoutes);
+app.use('/api/production', productionRoutes);
+app.use('/api/bill-print', billPrintRoutes);
+app.use('/api/fraud', fraudRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);

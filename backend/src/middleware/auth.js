@@ -87,4 +87,14 @@ const requireDevice = async (req, res, next) => {
   next();
 };
 
-module.exports = { auth, authorize, masterOnly, requireDevice };
+// Check granular permission
+const checkPermission = (permission) => {
+  return (req, res, next) => {
+    // Admin always has all permissions
+    if (req.user.role === 'admin') return next();
+    if (req.user.permissions && req.user.permissions[permission]) return next();
+    return res.status(403).json({ message: `Permission denied: ${permission}` });
+  };
+};
+
+module.exports = { auth, authorize, masterOnly, requireDevice, checkPermission };

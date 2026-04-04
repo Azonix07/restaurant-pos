@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
 import useSocket from '../../hooks/useSocket';
 import { FiPlus, FiX, FiSearch } from 'react-icons/fi';
@@ -18,6 +18,42 @@ const Orders = () => {
   const [activeCategory, setActiveCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const barcodeBuffer = useRef('');
+  const barcodeTimer = useRef(null);
+
+  // Barcode scanner listener - rapid keyboard input detection
+  useEffect(() => {
+    if (!showNewOrder) return;
+    const handleKeyDown = (e) => {
+      // Ignore if focus is in an input field (except barcode-specific)
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if (e.key === 'Enter' && barcodeBuffer.current.length >= 4) {
+        const barcode = barcodeBuffer.current;
+        barcodeBuffer.current = '';
+        lookupBarcode(barcode);
+        return;
+      }
+      if (e.key.length === 1) {
+        barcodeBuffer.current += e.key;
+        clearTimeout(barcodeTimer.current);
+        barcodeTimer.current = setTimeout(() => { barcodeBuffer.current = ''; }, 200);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showNewOrder, menuItems]);
+
+  const lookupBarcode = async (barcode) => {
+    try {
+      const res = await api.get(`/menu/barcode/${encodeURIComponent(barcode)}`);
+      if (res.data.item) {
+        addToCart(res.data.item);
+        toast.success(`Added: ${res.data.item.name}`);
+      }
+    } catch {
+      toast.error('Item not found for barcode: ' + barcode);
+    }
+  };
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -213,6 +249,9 @@ const Orders = () => {
                 <div className="menu-grid">
                   {filteredMenu.map(item => (
                     <button key={item._id} className="menu-item-btn" onClick={() => addToCart(item)}>
+                      {item.image && (
+                        <img src={item.image.startsWith('http') ? item.image : `/uploads/images/${item.image}`} alt="" className="menu-item-img" />
+                      )}
                       <span className={`veg-dot ${item.isVeg ? 'veg' : 'non-veg'}`} />
                       <span className="menu-item-name">{item.name}</span>
                       <span className="menu-item-price">₹{item.price}</span>

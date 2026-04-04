@@ -1,0 +1,13 @@
+.counter-page .counter-status { padding: 24px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), #7c3aed); color: #fff; margin-bottom: 24px; }
+.counter-page .counter-status h2 { margin: 0 0 8px; }
+.counter-page .counter-status .counter-meta { font-size: 13px; opacity: 0.85; }
+.counter-page .counter-closed-msg { text-align: center; padding: 60px 20px; }
+.counter-page .counter-closed-msg h2 { color: var(--text-secondary); margin-bottom: 12px; }
+.counter-page .live-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.counter-page .close-form { max-width: 600px; }
+.counter-page .close-form .input-group { margin-bottom: 12px; }
+.counter-page .variance-pos { color: var(--success); font-weight: 700; }
+.counter-page .variance-neg { color: var(--danger); font-weight: 700; }
+.counter-page .session-card { padding: 16px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); margin-bottom: 12px; }
+.counter-page .session-card .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+@media (max-width: 768px) { .counter-page .live-grid { grid-template-columns: repeat(2, 1fr); } }

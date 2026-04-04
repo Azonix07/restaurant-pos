@@ -124,3 +124,11 @@
   gap: 8px;
   justify-content: flex-end;
 }
+
+.kitchen-item-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}

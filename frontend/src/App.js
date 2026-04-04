@@ -34,6 +34,9 @@ import Customers from './pages/Customers/Customers';
 import StockManagement from './pages/StockManagement/StockManagement';
 import Wastage from './pages/Wastage/Wastage';
 import Devices from './pages/Devices/Devices';
+import Counter from './pages/Counter/Counter';
+import ProductionPage from './pages/Production/Production';
+import FraudDashboard from './pages/FraudDashboard/FraudDashboard';
 
 function App() {
   return (
@@ -110,6 +113,15 @@ function App() {
             } />
             <Route path="/devices" element={
               <ProtectedRoute roles={['admin']}><Devices /></ProtectedRoute>
+            } />
+            <Route path="/counter" element={
+              <ProtectedRoute roles={['admin', 'manager', 'cashier']}><Counter /></ProtectedRoute>
+            } />
+            <Route path="/production" element={
+              <ProtectedRoute roles={['admin', 'manager']}><ProductionPage /></ProtectedRoute>
+            } />
+            <Route path="/fraud-dashboard" element={
+              <ProtectedRoute roles={['admin', 'manager']}><FraudDashboard /></ProtectedRoute>
             } />
           </Route>
         </Routes>

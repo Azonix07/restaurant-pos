@@ -1,0 +1,10 @@
+.fraud-page .alert-card { border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid; }
+.fraud-page .alert-card.critical { border-left-color: #ef4444; background: #fef2f2; }
+.fraud-page .alert-card.warning { border-left-color: #f59e0b; background: #fffbeb; }
+.fraud-page .alert-card.info { border-left-color: #3b82f6; background: #eff6ff; }
+.fraud-page .alert-type { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.fraud-page .alert-msg { font-size: 14px; margin-top: 4px; }
+.fraud-page .recon-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.fraud-page .recon-status { font-size: 24px; font-weight: 700; text-align: center; padding: 20px; border-radius: 8px; margin-bottom: 16px; }
+.fraud-page .recon-status.clean { background: #ecfdf5; color: #065f46; }
+.fraud-page .recon-status.dirty { background: #fef2f2; color: #991b1b; }

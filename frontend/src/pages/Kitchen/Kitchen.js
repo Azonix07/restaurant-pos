@@ -9,7 +9,7 @@ const Kitchen = () => {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await api.get('/orders/kitchen');
+      const res = await api.get('/orders/kitchen?populate=images');
       setOrders(res.data.orders || []);
     } catch (err) {
       console.error(err);
@@ -88,6 +88,9 @@ const Kitchen = () => {
                 {order.items?.map(item => (
                   <div key={item._id} className={`kitchen-item ${item.status}`}>
                     <div className="kitchen-item-info">
+                      {item.menuItem?.image && (
+                        <img src={item.menuItem.image.startsWith('http') ? item.menuItem.image : `/uploads/images/${item.menuItem.image}`} alt="" className="kitchen-item-img" />
+                      )}
                       <span className="kitchen-item-qty">{item.quantity}x</span>
                       <span className="kitchen-item-name">{item.name}</span>
                       {item.notes && <span className="kitchen-item-notes">{item.notes}</span>}

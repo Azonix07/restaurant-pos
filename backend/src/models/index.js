@@ -21,6 +21,8 @@ const StockMovement = require('./StockMovement');
 const WastageEntry = require('./WastageEntry');
 const BillSequence = require('./BillSequence');
 const AlertLog = require('./AlertLog');
+const CounterSession = require('./CounterSession');
+const Production = require('./Production');
 
 module.exports = {
   User, MenuItem, Table, Order, Transaction, Expense,
@@ -28,4 +30,5 @@ module.exports = {
   AuditLog, RecycleBin, FixedAsset,
   Device, Customer, RawMaterial, Recipe, KOT,
   StockMovement, WastageEntry, BillSequence, AlertLog,
+  CounterSession, Production,
 };

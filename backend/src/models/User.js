@@ -12,6 +12,27 @@ const userSchema = new mongoose.Schema({
   },
   phone: { type: String, trim: true },
   isActive: { type: Boolean, default: true },
+  // Granular permissions managed by admin
+  permissions: {
+    canEditPrice: { type: Boolean, default: false },
+    canGiveDiscount: { type: Boolean, default: false },
+    maxDiscountPercent: { type: Number, default: 0 },
+    canCancelOrder: { type: Boolean, default: false },
+    canDeleteKOT: { type: Boolean, default: false },
+    canViewReports: { type: Boolean, default: false },
+    canExportData: { type: Boolean, default: false },
+    canModifyMenu: { type: Boolean, default: false },
+    canManageInventory: { type: Boolean, default: false },
+    canProcessRefund: { type: Boolean, default: false },
+    canOpenCounter: { type: Boolean, default: false },
+    canCloseCounter: { type: Boolean, default: false },
+  },
+  // Daily operational limits
+  limits: {
+    maxOrderValue: { type: Number, default: 0 }, // 0 = unlimited
+    maxDailyDiscount: { type: Number, default: 0 }, // max total discount per day
+    maxSingleDiscount: { type: Number, default: 0 }, // max discount per order
+  },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

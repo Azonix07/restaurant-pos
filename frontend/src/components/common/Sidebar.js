@@ -6,7 +6,8 @@ import {
   FiTruck, FiBarChart2, FiBook, FiSettings, FiLogOut, FiSmartphone,
   FiUsers, FiFileText, FiPackage, FiPercent, FiTrash2, FiEye,
   FiTool, FiBriefcase, FiRefreshCw, FiActivity, FiClipboard,
-  FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight
+  FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight,
+  FiClock, FiLayers, FiShield
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -40,6 +41,7 @@ const Sidebar = () => {
         { path: '/orders', icon: <FiShoppingCart />, label: 'Orders', roles: ['admin', 'manager', 'cashier', 'waiter'] },
         { path: '/tables', icon: <FiGrid />, label: 'Tables', roles: ['admin', 'manager', 'cashier', 'waiter'] },
         { path: '/billing', icon: <FiDollarSign />, label: 'Billing', roles: ['admin', 'manager', 'cashier'] },
+        { path: '/counter', icon: <FiClock />, label: 'Counter & Shifts', roles: ['admin', 'manager', 'cashier'] },
         { path: '/customers', icon: <FiUserCheck />, label: 'Customers', roles: ['admin', 'manager', 'cashier'] },
       ],
     },
@@ -59,6 +61,7 @@ const Sidebar = () => {
       items: [
         { path: '/inventory', icon: <FiPackage />, label: 'Menu Items', roles: ['admin', 'manager'] },
         { path: '/stock-management', icon: <FiBox />, label: 'Stock & BOM', roles: ['admin', 'manager'] },
+        { path: '/production', icon: <FiLayers />, label: 'Production', roles: ['admin', 'manager'] },
         { path: '/wastage', icon: <FiAlertTriangle />, label: 'Wastage', roles: ['admin', 'manager'] },
       ],
     },
@@ -90,6 +93,7 @@ const Sidebar = () => {
       roles: ['admin'],
       items: [
         { path: '/monitoring', icon: <FiActivity />, label: 'Monitoring', roles: ['admin', 'manager'] },
+        { path: '/fraud-dashboard', icon: <FiShield />, label: 'Anti-Fraud', roles: ['admin', 'manager'] },
         { path: '/devices', icon: <FiCpu />, label: 'Devices', roles: ['admin'] },
         { path: '/companies', icon: <FiBriefcase />, label: 'Companies', roles: ['admin'] },
         { path: '/tally', icon: <FiRefreshCw />, label: 'Tally Sync', roles: ['admin'] },

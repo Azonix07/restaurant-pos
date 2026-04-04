@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import useSocket from '../../hooks/useSocket';
-import { FiPrinter, FiCheck, FiSearch } from 'react-icons/fi';
+import { FiPrinter, FiCheck, FiSearch, FiWifi } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import './Billing.css';
 
@@ -41,43 +41,66 @@ const Billing = () => {
     }
   };
 
-  const printBill = () => {
+  const printBill = async () => {
     if (!selectedOrder) return;
-    const bill = selectedOrder;
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    printWindow.document.write(`
-      <html><head><title>Bill</title>
-      <style>
-        body { font-family: monospace; padding: 20px; max-width: 350px; margin: 0 auto; }
-        h2 { text-align: center; }
-        .line { border-top: 1px dashed #000; margin: 10px 0; }
-        table { width: 100%; border-collapse: collapse; }
-        td { padding: 4px 0; vertical-align: top; }
-        .right { text-align: right; }
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-      </style></head><body>
-      <h2>Restaurant POS</h2>
-      <p class="center">Bill No: ${bill.billNumber || bill.orderNumber}<br/>
-      Date: ${new Date(bill.createdAt).toLocaleString('en-IN')}<br/>
-      ${bill.tableNumber ? `Table: ${bill.tableNumber}` : ''}</p>
-      <div class="line"></div>
-      <table>
-        <tr class="bold"><td>Item</td><td class="right">Qty</td><td class="right">Amount</td></tr>
-        ${bill.items?.map(i => `<tr><td>${i.name}</td><td class="right">${i.quantity}</td><td class="right">₹${(i.price * i.quantity).toFixed(2)}</td></tr>`).join('')}
-      </table>
-      <div class="line"></div>
-      <table>
-        <tr><td>Subtotal</td><td class="right">₹${bill.subtotal?.toFixed(2)}</td></tr>
-        <tr><td>GST</td><td class="right">₹${bill.gstAmount?.toFixed(2)}</td></tr>
-        ${bill.discount > 0 ? `<tr><td>Discount</td><td class="right">-₹${bill.discount?.toFixed(2)}</td></tr>` : ''}
-        <tr class="bold"><td>TOTAL</td><td class="right">₹${bill.total?.toFixed(2)}</td></tr>
-      </table>
-      <div class="line"></div>
-      <p class="center">Thank you! Visit Again!</p>
-      <script>window.print();</script>
-      </body></html>
-    `);
+    try {
+      const res = await api.get(`/bill-print/${selectedOrder._id}/html`);
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      printWindow.document.write(res.data.html);
+    } catch {
+      // Fallback to local generation
+      const bill = selectedOrder;
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      printWindow.document.write(`
+        <html><head><title>Bill</title>
+        <style>
+          @page { size: 80mm auto; margin: 2mm; }
+          body { font-family: 'Courier New', monospace; padding: 10px; max-width: 350px; margin: 0 auto; font-size: 13px; }
+          h2 { text-align: center; margin: 0 0 4px; }
+          .center { text-align: center; }
+          .right { text-align: right; }
+          .line { border-top: 1px dashed #000; margin: 8px 0; }
+          .dline { border-top: 2px solid #000; margin: 8px 0; }
+          table { width: 100%; border-collapse: collapse; }
+          td, th { padding: 3px 0; vertical-align: top; }
+          th { text-align: left; border-bottom: 1px solid #000; }
+          .total-row td { font-weight: bold; font-size: 16px; }
+        </style></head><body>
+        <h2>Restaurant POS</h2>
+        <p class="center">Bill: ${bill.billNumber || bill.orderNumber}<br/>
+        Date: ${new Date(bill.createdAt).toLocaleString('en-IN')}<br/>
+        ${bill.tableNumber ? `Table: ${bill.tableNumber}` : ''}</p>
+        <div class="dline"></div>
+        <table>
+          <tr><th>Item</th><th class="right">Qty</th><th class="right">Amount</th></tr>
+          ${bill.items?.filter(i => i.status !== 'cancelled').map(i => `<tr><td>${i.name}</td><td class="right">${i.quantity}</td><td class="right">₹${(i.price * i.quantity).toFixed(2)}</td></tr>`).join('')}
+        </table>
+        <div class="dline"></div>
+        <table>
+          <tr><td>Subtotal</td><td class="right">₹${bill.subtotal?.toFixed(2)}</td></tr>
+          <tr><td>GST</td><td class="right">₹${bill.gstAmount?.toFixed(2)}</td></tr>
+          ${bill.discount > 0 ? `<tr><td>Discount</td><td class="right">-₹${bill.discount?.toFixed(2)}</td></tr>` : ''}
+          <tr style="font-weight:bold;font-size:16px"><td>TOTAL</td><td class="right">₹${bill.total?.toFixed(2)}</td></tr>
+          <tr><td>Payment</td><td class="right">${(bill.paymentMethod || '').toUpperCase()}</td></tr>
+        </table>
+        <div class="line"></div>
+        <p class="center" style="font-size:11px">CGST: ₹${(bill.gstAmount / 2)?.toFixed(2)} | SGST: ₹${(bill.gstAmount / 2)?.toFixed(2)}</p>
+        <div class="line"></div>
+        <p class="center">Thank you! Visit Again!</p>
+        <script>window.print();</script>
+        </body></html>
+      `);
+    }
+  };
+
+  const printThermal = async () => {
+    if (!selectedOrder) return;
+    try {
+      await api.post(`/bill-print/${selectedOrder._id}/auto`);
+      toast.success('Bill sent to thermal printer');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Thermal print failed — check printer config');
+    }
   };
 
   const filteredOrders = orders.filter(o =>
@@ -132,6 +155,7 @@ const Billing = () => {
               <div className="flex-between mb-16">
                 <h2>{selectedOrder.orderNumber}</h2>
                 <button className="btn btn-secondary btn-sm" onClick={printBill}><FiPrinter /> Print</button>
+                <button className="btn btn-secondary btn-sm" onClick={printThermal} title="Send to thermal printer"><FiWifi /> Thermal</button>
               </div>
 
               <table className="data-table mb-16">
