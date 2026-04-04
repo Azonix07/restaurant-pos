@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Restaurant POS Desktop App",
   "author": "Restaurant POS",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Azonix07/restaurant-pos.git"
+  },
   "main": "main.js",
   "scripts": {
     "start": "electron .",
