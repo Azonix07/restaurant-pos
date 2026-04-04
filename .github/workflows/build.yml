@@ -17,16 +17,16 @@ jobs:
           node-version: 20
 
       - name: Install backend dependencies
-        run: cd backend && npm ci --omit=dev
+        run: cd backend && npm install --omit=dev
 
       - name: Install frontend dependencies & build
         run: |
           cd frontend
-          npm ci
+          npm install
           npm run build
 
       - name: Install electron dependencies
-        run: cd electron && npm ci
+        run: cd electron && npm install
 
       - name: Build Windows installer
         run: cd electron && npx electron-builder --win --x64
@@ -51,16 +51,16 @@ jobs:
           node-version: 20
 
       - name: Install backend dependencies
-        run: cd backend && npm ci --omit=dev
+        run: cd backend && npm install --omit=dev
 
       - name: Install frontend dependencies & build
         run: |
           cd frontend
-          npm ci
+          npm install
           npm run build
 
       - name: Install electron dependencies
-        run: cd electron && npm ci
+        run: cd electron && npm install
 
       - name: Build macOS installer
         run: cd electron && npx electron-builder --mac
@@ -83,16 +83,16 @@ jobs:
           node-version: 20
 
       - name: Install backend dependencies
-        run: cd backend && npm ci --omit=dev
+        run: cd backend && npm install --omit=dev
 
       - name: Install frontend dependencies & build
         run: |
           cd frontend
-          npm ci
+          npm install
           npm run build
 
       - name: Install electron dependencies
-        run: cd electron && npm ci
+        run: cd electron && npm install
 
       - name: Build Linux installer
         run: cd electron && npx electron-builder --linux
