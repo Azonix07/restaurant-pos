@@ -99,13 +99,17 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve frontend in production
-app.use(express.static(path.join(__dirname, '../../frontend/build')));
+// Support both dev layout (../../frontend/build) and packaged Electron layout (../frontend/build)
+const frontendBuildPath = require('fs').existsSync(path.join(__dirname, '../../frontend/build'))
+  ? path.join(__dirname, '../../frontend/build')
+  : path.join(__dirname, '../frontend/build');
+app.use(express.static(frontendBuildPath));
 app.get('/qr-order/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
   }
 });
 
