@@ -71,7 +71,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Restaurant POS",
-      "perMachine": true,
+      "perMachine": false,
       "runAfterFinish": true
     },
     "linux": {

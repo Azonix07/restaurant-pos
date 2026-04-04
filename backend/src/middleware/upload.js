@@ -3,7 +3,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const UPLOAD_DIR = path.join(__dirname, '../../uploads');
+// Use USER_DATA_PATH (from Electron) if available, otherwise fall back to relative path (dev mode)
+const baseDir = process.env.USER_DATA_PATH || path.join(__dirname, '../..');
+const UPLOAD_DIR = path.join(baseDir, 'uploads');
 const IMAGES_DIR = path.join(UPLOAD_DIR, 'images');
 const WASTAGE_DIR = path.join(UPLOAD_DIR, 'wastage');
 

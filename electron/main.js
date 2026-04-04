@@ -15,6 +15,13 @@ const userDataPath = app.getPath('userData');
 const mongoDataPath = path.join(userDataPath, 'mongodb-data');
 const mongoBinPath = path.join(userDataPath, 'mongodb-bin');
 const firstRunFlag = path.join(userDataPath, '.pos-initialized');
+const logFilePath = path.join(userDataPath, 'pos-startup.log');
+
+// Simple log-to-file for diagnostics (especially on Windows where there's no console)
+function logToFile(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  try { fs.appendFileSync(logFilePath, line); } catch (_) {}
+}
 
 let mainWindow = null;
 let splashWindow = null;
@@ -143,7 +150,7 @@ function runSeed(mongoUri) {
     const seedPath = resolvePath('backend', 'src', 'seed.js');
     const cwd = resolvePath('backend');
     const child = spawn(process.execPath, [seedPath], {
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MONGODB_URI: mongoUri },
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MONGODB_URI: mongoUri, USER_DATA_PATH: userDataPath },
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -162,6 +169,10 @@ function startBackend(mongoUri) {
     const serverPath = resolvePath('backend', 'src', 'server.js');
     const cwd = resolvePath('backend');
 
+    logToFile(`Backend serverPath: ${serverPath}`);
+    logToFile(`Backend cwd: ${cwd}`);
+    logToFile(`Backend mongoUri: ${mongoUri}`);
+
     backendProcess = spawn(process.execPath, [serverPath], {
       env: {
         ...process.env,
@@ -169,6 +180,7 @@ function startBackend(mongoUri) {
         PORT: String(SERVER_PORT),
         MONGODB_URI: mongoUri,
         NODE_ENV: 'production',
+        USER_DATA_PATH: userDataPath,
       },
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -178,24 +190,30 @@ function startBackend(mongoUri) {
     backendProcess.stdout.on('data', (data) => {
       const text = data.toString();
       console.log('[Backend]', text.trim());
+      logToFile(`[Backend stdout] ${text.trim()}`);
       if (!resolved && text.includes('Server Running')) {
         resolved = true;
         resolve();
       }
     });
 
-    backendProcess.stderr.on('data', (d) =>
-      console.error('[Backend]', d.toString().trim())
-    );
+    backendProcess.stderr.on('data', (d) => {
+      const text = d.toString().trim();
+      console.error('[Backend]', text);
+      logToFile(`[Backend stderr] ${text}`);
+    });
 
     backendProcess.on('error', (err) => {
       console.error('[Backend] Spawn error:', err.message);
+      logToFile(`[Backend spawn error] ${err.message}`);
       if (!resolved) { resolved = true; resolve(); }
     });
 
     backendProcess.on('exit', (code) => {
       console.log('[Backend] Exited with code', code);
+      logToFile(`[Backend exit] code=${code}`);
       backendProcess = null;
+      if (!resolved) { resolved = true; resolve(); }
     });
 
     // Safety timeout
@@ -286,7 +304,12 @@ app.whenReady().then(async () => {
   let serverReady = false;
 
   try {
-    // 0. Free ports from any crashed previous instance
+    // 0. Initialize log & free ports from any crashed previous instance
+    fs.writeFileSync(logFilePath, `=== POS Startup ${new Date().toISOString()} ===\n`);
+    logToFile(`Platform: ${process.platform}, Arch: ${process.arch}`);
+    logToFile(`userData: ${userDataPath}`);
+    logToFile(`resourcesPath: ${process.resourcesPath}`);
+    logToFile(`isPackaged: ${app.isPackaged}`);
     splashStatus('Preparing', 5);
     await freePort(SERVER_PORT);
     await freePort(27099);
@@ -295,6 +318,7 @@ app.whenReady().then(async () => {
     splashStatus('Starting database', 10);
     console.log('[Startup] Starting embedded MongoDB...');
     mongoUri = await startMongoDB();
+    logToFile(`MongoDB URI: ${mongoUri}`);
     splashStatus('Database ready', 35);
 
     // 2. Seed on first run
@@ -313,10 +337,12 @@ app.whenReady().then(async () => {
     splashStatus('Server started', 75);
 
     // 4. Wait for server with retries
-    serverReady = await waitForServer(5, 1500);
+    serverReady = await waitForServer(8, 2000);
+    logToFile(`Server ready: ${serverReady}`);
     splashStatus(serverReady ? 'Ready' : 'Finishing up', 95);
   } catch (err) {
     console.error('[Startup] Error:', err);
+    logToFile(`[Startup error] ${err.stack || err.message || err}`);
   }
 
   // 5. Open the main window immediately — it will either load the app
