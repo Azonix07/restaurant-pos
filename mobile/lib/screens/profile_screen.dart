@@ -16,7 +16,18 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _hasAiKey = ClaudeService.hasApiKey;
+  bool _hasAiKey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshAiKey();
+  }
+
+  Future<void> _refreshAiKey() async {
+    await ClaudeService.init();
+    if (mounted) setState(() => _hasAiKey = ClaudeService.hasApiKey);
+  }
 
   void _showAiKeyDialog() {
     final keyController = TextEditingController();
@@ -47,6 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await ClaudeService.clearApiKey();
                 setState(() => _hasAiKey = false);
                 if (ctx.mounted) Navigator.pop(ctx);
+                _refreshAiKey();
               },
               child: const Text('Remove', style: TextStyle(color: AppTheme.danger)),
             ),
@@ -57,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await ClaudeService.setApiKey(key);
                 setState(() => _hasAiKey = true);
                 if (ctx.mounted) Navigator.pop(ctx);
+                _refreshAiKey();
               }
             },
             child: const Text('Save'),

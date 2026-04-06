@@ -97,7 +97,18 @@ class _AIChatModalState extends State<_AIChatModal> {
   final _scrollController = ScrollController();
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
-  bool _hasKey = ClaudeService.hasApiKey;
+  bool _hasKey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshKey();
+  }
+
+  Future<void> _refreshKey() async {
+    await ClaudeService.init();
+    if (mounted) setState(() => _hasKey = ClaudeService.hasApiKey);
+  }
 
   final _suggestions = [
     "What's today's revenue?",
@@ -187,6 +198,7 @@ class _AIChatModalState extends State<_AIChatModal> {
               child: const Text('Remove', style: TextStyle(color: AppTheme.danger)),
             ),
           ElevatedButton(
+
             onPressed: () async {
               final key = keyController.text.trim();
               if (key.isNotEmpty) {

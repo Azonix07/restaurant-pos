@@ -148,12 +148,15 @@ Current restaurant data context:
 ${jsonEncode(context)}''';
 
     final messages = <Map<String, String>>[];
-    // Add conversation history (last 10 messages)
+    // Add conversation history (last 10 messages, excluding the last user message since we add it)
     final recentHistory = history.length > 10 ? history.sublist(history.length - 10) : history;
     for (final msg in recentHistory) {
       messages.add({'role': msg['role']!, 'content': msg['content']!});
     }
-    messages.add({'role': 'user', 'content': userMessage});
+    // Only add user message if not already the last message in history
+    if (messages.isEmpty || messages.last['content'] != userMessage || messages.last['role'] != 'user') {
+      messages.add({'role': 'user', 'content': userMessage});
+    }
 
     final response = await http.post(
       Uri.parse(_apiUrl),

@@ -7,11 +7,11 @@ class ApiService {
   static String? _token;
   static const _timeout = Duration(seconds: 15);
 
-  static String get baseUrl => _baseUrl ?? 'http://192.168.1.100:5001/api';
+  static String get baseUrl => _baseUrl ?? 'http://192.168.1.96:5001/api';
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _baseUrl = prefs.getString('server_url') ?? 'http://192.168.1.100:5001/api';
+    _baseUrl = prefs.getString('server_url') ?? 'http://192.168.1.96:5001/api';
     _token = prefs.getString('auth_token');
   }
 
