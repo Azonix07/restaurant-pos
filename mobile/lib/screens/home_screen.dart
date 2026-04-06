@@ -6,6 +6,7 @@ import 'tables_screen.dart';
 import 'orders_screen.dart';
 import 'menu_screen.dart';
 import 'profile_screen.dart';
+import 'ai_chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TablesScreen(),
     MenuScreen(),
     OrdersScreen(),
+    AiChatScreen(),
     ProfileScreen(),
   ];
 
@@ -99,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (i == 2) {
             context.read<OrderProvider>().fetchActiveOrders();
           }
+          // Refresh not needed for AI tab, it handles its own state
         },
         items: const [
           BottomNavigationBarItem(
@@ -107,6 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.restaurant_menu), label: 'Menu'),
           BottomNavigationBarItem(
               icon: Icon(Icons.receipt_long), label: 'Orders'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome), label: 'AI'),
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline), label: 'Profile'),
         ],

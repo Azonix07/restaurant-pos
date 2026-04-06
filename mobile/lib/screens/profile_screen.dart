@@ -3,9 +3,65 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/sync_service.dart';
+import '../services/claude_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _hasAiKey = ClaudeService.hasApiKey;
+
+  void _showAiKeyDialog() {
+    final keyController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Claude API Key'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter your Anthropic API key. It is stored locally on this device only.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: keyController,
+              decoration: const InputDecoration(hintText: 'sk-ant-...', labelText: 'API Key', isDense: true),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          if (_hasAiKey)
+            TextButton(
+              onPressed: () async {
+                await ClaudeService.clearApiKey();
+                setState(() => _hasAiKey = false);
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Remove', style: TextStyle(color: Color(0xFFEF4444))),
+            ),
+          ElevatedButton(
+            onPressed: () async {
+              final key = keyController.text.trim();
+              if (key.isNotEmpty) {
+                await ClaudeService.setApiKey(key);
+                setState(() => _hasAiKey = true);
+                if (ctx.mounted) Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +246,54 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // AI Settings card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('AI ASSISTANT',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF9CA3AF))),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, size: 18, color: Color(0xFF6366F1)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _hasAiKey ? 'Claude API key configured' : 'No API key set',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                      Container(
+                        width: 8, height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _hasAiKey ? const Color(0xFF22C55E) : const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: Icon(_hasAiKey ? Icons.edit : Icons.key, size: 16),
+                      label: Text(_hasAiKey ? 'Change API Key' : 'Set API Key'),
+                      onPressed: _showAiKeyDialog,
+                    ),
+                  ),
                 ],
               ),
             ),

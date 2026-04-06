@@ -5,10 +5,12 @@ import 'providers/order_provider.dart';
 import 'services/sync_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'services/claude_service.dart';
 import 'theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ClaudeService.init();
   runApp(const POSWaiterApp());
 }
 
