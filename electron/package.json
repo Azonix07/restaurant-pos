@@ -19,7 +19,7 @@
     "publish:linux": "electron-builder --linux --publish always"
   },
   "dependencies": {
-    "electron-updater": "^6.1.7",
+    "electron-updater": "^6.8.3",
     "mongodb-memory-server-core": "^11.0.1"
   },
   "devDependencies": {
@@ -83,8 +83,16 @@
     "dmg": {
       "title": "Restaurant POS",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     },
     "win": {

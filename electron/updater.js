@@ -1,9 +1,18 @@
-const { autoUpdater } = require('electron-updater');
+let autoUpdater;
+try {
+  autoUpdater = require('electron-updater').autoUpdater;
+} catch (err) {
+  console.warn('[Updater] electron-updater not available:', err.message);
+}
 const { ipcMain, dialog, BrowserWindow } = require('electron');
 
 let mainWindow = null;
 
 function initAutoUpdater(win) {
+  if (!autoUpdater) {
+    console.warn('[Updater] Skipping — electron-updater not installed');
+    return;
+  }
   mainWindow = win;
 
   // Configure updater
@@ -92,6 +101,11 @@ function initAutoUpdater(win) {
   });
 
   // ─── IPC Handlers ─────────────────────────────────────
+  // Remove fallback handlers registered by main.js, then register real ones
+  ipcMain.removeHandler('check-for-updates');
+  ipcMain.removeHandler('download-update');
+  ipcMain.removeHandler('install-update');
+  ipcMain.removeHandler('get-app-version');
 
   ipcMain.handle('check-for-updates', async () => {
     try {

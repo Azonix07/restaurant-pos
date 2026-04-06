@@ -3,7 +3,6 @@ const path = require('path');
 const { spawn, exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
-const { initAutoUpdater } = require('./updater');
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -422,7 +421,12 @@ app.whenReady().then(async () => {
 
   // 6. Initialize auto-updater (only in packaged builds)
   if (app.isPackaged && mainWindow) {
-    initAutoUpdater(mainWindow);
+    try {
+      const { initAutoUpdater } = require('./updater');
+      initAutoUpdater(mainWindow);
+    } catch (err) {
+      logToFile(`[Updater] Failed to initialize: ${err.message}`);
+    }
   }
 });
 
@@ -474,6 +478,12 @@ ipcMain.handle('print-bill', async (_event, html) => {
 });
 
 ipcMain.handle('get-server-url', () => SERVER_URL);
+
+// Fallback IPC handlers for update functions (overridden by updater.js in packaged builds)
+ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.handle('check-for-updates', () => ({ success: false, error: 'Updates only available in packaged builds' }));
+ipcMain.handle('download-update', () => ({ success: false, error: 'Updates only available in packaged builds' }));
+ipcMain.handle('install-update', () => {});
 
 ipcMain.handle('get-startup-state', () => ({
   phase: startupState.phase,
