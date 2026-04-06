@@ -76,17 +76,9 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["x64", "arm64"]
-        }
-      ],
+      "target": "dmg",
       "icon": "icon.icns",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist"
+      "identity": null
     },
     "dmg": {
       "title": "Restaurant POS",
@@ -96,14 +88,8 @@
       ]
     },
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ],
-      "icon": "icon.ico",
-      "publisherName": "Restaurant POS"
+      "target": "nsis",
+      "icon": "icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -112,9 +98,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Restaurant POS",
       "perMachine": false,
-      "runAfterFinish": true,
-      "installerIcon": "icon.ico",
-      "uninstallerIcon": "icon.ico"
+      "runAfterFinish": true
     },
     "linux": {
       "target": "AppImage",
