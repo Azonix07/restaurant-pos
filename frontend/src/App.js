@@ -49,6 +49,9 @@ import TokenQueue from './pages/TokenQueue/TokenQueue';
 import Suppliers from './pages/Suppliers/Suppliers';
 import SystemModes from './pages/SystemModes/SystemModes';
 import AIAssistant from './pages/AIAssistant/AIAssistant';
+import RoleManagement from './pages/RoleManagement/RoleManagement';
+import Approvals from './pages/Approvals/Approvals';
+import OrderTracking from './pages/OrderTracking/OrderTracking';
 
 function App() {
   return (
@@ -59,6 +62,7 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/qr-order/:tableNumber" element={<CustomerOrder />} />
+          <Route path="/track" element={<OrderTracking />} />
 
           {/* Protected routes inside Layout */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -168,6 +172,12 @@ function App() {
             } />
             <Route path="/ai-assistant" element={
               <ProtectedRoute roles={['admin', 'manager']}><AIAssistant /></ProtectedRoute>
+            } />
+            <Route path="/role-management" element={
+              <ProtectedRoute roles={['admin']}><RoleManagement /></ProtectedRoute>
+            } />
+            <Route path="/approvals" element={
+              <ProtectedRoute roles={['admin', 'manager']}><Approvals /></ProtectedRoute>
             } />
           </Route>
         </Routes>

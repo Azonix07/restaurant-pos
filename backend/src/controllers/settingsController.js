@@ -52,6 +52,7 @@ exports.updateRushConfig = async (req, res, next) => {
     const allowed = [
       'autoKOT', 'autoAssignTables', 'disableImages', 'disableAnimations',
       'disableEditOldBills', 'disableComplexDiscounts', 'disableReports', 'skipKOTConfirmation',
+      'autoTrigger', 'autoTriggerThreshold', 'autoTriggerWindow', 'autoDisableAfterMins',
     ];
     for (const key of allowed) {
       if (req.body[key] !== undefined) settings.rushMode[key] = req.body[key];
@@ -59,6 +60,49 @@ exports.updateRushConfig = async (req, res, next) => {
     await settings.save();
     res.json({ settings });
   } catch (error) { next(error); }
+};
+
+// ─── Rush Mode Auto-Trigger Check (called periodically or on new order) ─
+exports.checkRushAutoTrigger = async (io) => {
+  try {
+    const settings = await SystemSettings.getInstance();
+    if (!settings.rushMode.autoTrigger) return;
+
+    const windowMs = (settings.rushMode.autoTriggerWindow || 10) * 60 * 1000;
+    const since = new Date(Date.now() - windowMs);
+
+    const recentCount = await Order.countDocuments({
+      createdAt: { $gte: since },
+      isTestData: { $ne: true },
+    });
+
+    const threshold = settings.rushMode.autoTriggerThreshold || 10;
+
+    if (recentCount >= threshold && !settings.rushMode.enabled) {
+      // Auto-enable rush mode
+      settings.rushMode.enabled = true;
+      settings.rushMode.enabledAt = new Date();
+      await settings.save();
+      if (io) io.emit('settings:rushMode', { enabled: true, autoTriggered: true });
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        action: 'enable',
+        module: 'rush_mode',
+        description: `Rush Mode auto-triggered: ${recentCount} orders in ${settings.rushMode.autoTriggerWindow}min (threshold: ${threshold})`,
+      });
+    } else if (recentCount < Math.floor(threshold / 2) && settings.rushMode.enabled && settings.rushMode.autoTrigger) {
+      // Auto-disable when volume drops below half the threshold
+      const enabledFor = settings.rushMode.enabledAt ? (Date.now() - settings.rushMode.enabledAt.getTime()) / 60000 : 0;
+      if (enabledFor > (settings.rushMode.autoDisableAfterMins || 30)) {
+        settings.rushMode.enabled = false;
+        settings.rushMode.enabledAt = null;
+        await settings.save();
+        if (io) io.emit('settings:rushMode', { enabled: false, autoTriggered: true });
+      }
+    }
+  } catch (err) {
+    // silent — background check
+  }
 };
 
 // ─── Toggle Test Mode (Admin only with PIN) ─────────
@@ -282,6 +326,78 @@ exports.getSmartAlerts = async (req, res, next) => {
     }
 
     res.json({ alerts, generated: new Date() });
+  } catch (error) { next(error); }
+};
+
+// ─── Comparative Insights (today vs last week, this week vs last week) ──
+exports.getInsights = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+    const lastWeekSameDay = new Date(todayStart.getTime() - 7 * 86400000);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
+    const lastWeekStart = new Date(weekStart.getTime() - 7 * 86400000);
+
+    const matchBase = { paymentStatus: 'paid', isTestData: { $ne: true } };
+
+    const [todaySales, yesterdaySales, lastWeekSameDaySales] = await Promise.all([
+      Order.aggregate([
+        { $match: { ...matchBase, createdAt: { $gte: todayStart } } },
+        { $group: { _id: null, total: { $sum: '$total' }, count: { $sum: 1 }, avgOrder: { $avg: '$total' } } },
+      ]),
+      Order.aggregate([
+        { $match: { ...matchBase, createdAt: { $gte: yesterdayStart, $lt: todayStart } } },
+        { $group: { _id: null, total: { $sum: '$total' }, count: { $sum: 1 }, avgOrder: { $avg: '$total' } } },
+      ]),
+      Order.aggregate([
+        { $match: { ...matchBase, createdAt: { $gte: lastWeekSameDay, $lt: new Date(lastWeekSameDay.getTime() + 86400000) } } },
+        { $group: { _id: null, total: { $sum: '$total' }, count: { $sum: 1 }, avgOrder: { $avg: '$total' } } },
+      ]),
+    ]);
+
+    const t = todaySales[0] || { total: 0, count: 0, avgOrder: 0 };
+    const y = yesterdaySales[0] || { total: 0, count: 0, avgOrder: 0 };
+    const lw = lastWeekSameDaySales[0] || { total: 0, count: 0, avgOrder: 0 };
+
+    const pctChange = (curr, prev) => prev > 0 ? Math.round(((curr - prev) / prev) * 100) : curr > 0 ? 100 : 0;
+
+    // Hourly breakdown for today
+    const hourlyToday = await Order.aggregate([
+      { $match: { ...matchBase, createdAt: { $gte: todayStart } } },
+      { $group: { _id: { $hour: '$createdAt' }, orders: { $sum: 1 }, revenue: { $sum: '$total' } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Payment method breakdown today
+    const paymentBreakdown = await Order.aggregate([
+      { $match: { ...matchBase, createdAt: { $gte: todayStart } } },
+      { $group: { _id: '$paymentMethod', total: { $sum: '$total' }, count: { $sum: 1 } } },
+      { $sort: { total: -1 } },
+    ]);
+
+    res.json({
+      today: {
+        revenue: Math.round(t.total),
+        orders: t.count,
+        avgOrderValue: Math.round(t.avgOrder),
+      },
+      comparison: {
+        vsYesterday: {
+          revenuePct: pctChange(t.total, y.total),
+          ordersPct: pctChange(t.count, y.count),
+        },
+        vsLastWeek: {
+          revenuePct: pctChange(t.total, lw.total),
+          ordersPct: pctChange(t.count, lw.count),
+        },
+      },
+      hourlyBreakdown: hourlyToday.map(h => ({ hour: h._id, orders: h.orders, revenue: Math.round(h.revenue) })),
+      paymentBreakdown: paymentBreakdown.map(p => ({ method: p._id, total: Math.round(p.total), count: p.count })),
+      generatedAt: new Date(),
+    });
   } catch (error) { next(error); }
 };
 

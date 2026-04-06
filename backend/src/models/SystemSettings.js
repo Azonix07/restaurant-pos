@@ -17,6 +17,11 @@ const systemSettingsSchema = new mongoose.Schema({
     disableComplexDiscounts: { type: Boolean, default: true },
     disableReports: { type: Boolean, default: true },
     skipKOTConfirmation: { type: Boolean, default: true },
+    // Auto-trigger settings
+    autoTrigger: { type: Boolean, default: false },
+    autoTriggerThreshold: { type: Number, default: 10 }, // orders per 10 min window
+    autoTriggerWindow: { type: Number, default: 10 }, // minutes
+    autoDisableAfterMins: { type: Number, default: 30 }, // auto-disable after calm
   },
 
   // Test Mode

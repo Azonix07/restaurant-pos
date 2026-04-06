@@ -41,6 +41,9 @@ const userSchema = new mongoose.Schema({
   },
   // 4-digit PIN for authorizing sensitive operations
   pin: { type: String, select: false },
+  // PIN lockout after failed attempts
+  failedPinAttempts: { type: Number, default: 0 },
+  pinLockedUntil: { type: Date },
   // Token revocation: tokens issued before this date are invalid
   tokenRevokedAt: { type: Date },
 }, { timestamps: true });

@@ -56,6 +56,8 @@ const deliveryRoutes = require('./routes/delivery');
 const pinRoutes = require('./routes/pin');
 const loadTestRoutes = require('./routes/loadTest');
 const roleRoutes = require('./routes/roles');
+const approvalRoutes = require('./routes/approvals');
+const trackingRoutes = require('./routes/tracking');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -150,6 +152,10 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/pin', pinRoutes);
 app.use('/api/load-test', loadTestRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/approvals', approvalRoutes);
+
+// Public routes (no auth)
+app.use('/api/track', trackingRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);
@@ -177,6 +183,9 @@ app.use(express.static(frontendBuildPath));
 app.get('/qr-order/*', (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
+app.get('/track', (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
+});
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
@@ -196,6 +205,10 @@ startFraudMonitor(io);
 // Start auto-backup scheduler
 const { startAutoBackup } = require('./services/autoBackup');
 startAutoBackup();
+
+// Rush mode auto-trigger check every 2 minutes
+const { checkRushAutoTrigger } = require('./controllers/settingsController');
+setInterval(() => checkRushAutoTrigger(io), 120000);
 
 // Start server
 const startServer = async () => {

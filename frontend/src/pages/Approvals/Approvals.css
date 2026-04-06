@@ -1,0 +1,74 @@
+.approvals-page { padding: 0; }
+.approvals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.approvals-header h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; }
+.pending-badge { background: #ef4444; color: #fff; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-left: 0.5rem; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.tab-switcher { display: flex; gap: 0; background: var(--color-surface-alt, #f3f4f6); border-radius: 10px; overflow: hidden; }
+.tab-switcher button { padding: 0.5rem 1.25rem; border: none; background: none; font-weight: 600; font-size: 0.875rem; cursor: pointer; color: var(--color-text-secondary, #666); transition: all 0.15s; }
+.tab-switcher button.active { background: var(--color-primary, #6c5ce7); color: #fff; }
+
+/* Pending list */
+.pending-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.approval-card { background: var(--color-surface, #fff); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: flex-start; gap: 1rem; border: 1px solid var(--color-border, #e5e7eb); }
+.approval-card.pending { border-left: 4px solid #f59e0b; }
+.approval-badge { color: #fff; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.approval-badge-sm { color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+.approval-body { flex: 1; min-width: 0; }
+.approval-desc { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--color-text, #1a1a2e); }
+.approval-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; color: var(--color-text-secondary, #888); }
+.approval-meta strong { color: var(--color-text, #374151); }
+.approval-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+.pin-warning { display: flex; align-items: center; gap: 0.35rem; color: #ef4444; font-size: 0.8rem; font-weight: 600; margin-top: 0.35rem; }
+.pin-verified { color: #059669; font-weight: 600; }
+
+.approval-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.btn-approve { background: #059669; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.825rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; }
+.btn-approve:hover { background: #047857; }
+.btn-reject { background: none; color: #ef4444; border: 1px solid #ef4444; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.825rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; }
+.btn-reject:hover { background: #fef2f2; }
+
+.status-label { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.status-label.approved { background: #d1fae5; color: #059669; }
+.status-label.rejected { background: #fee2e2; color: #ef4444; }
+.status-label.expired { background: #f3f4f6; color: #6b7280; }
+.status-label.pending { background: #fef3c7; color: #d97706; }
+
+/* Status icons */
+.status-icon { font-size: 1.25rem; }
+.status-icon.approved { color: #059669; }
+.status-icon.rejected { color: #ef4444; }
+.status-icon.expired { color: #9ca3af; }
+.status-icon.pending { color: #f59e0b; }
+.approval-status-col { padding-top: 0.25rem; flex-shrink: 0; }
+
+/* History */
+.history-section { }
+.history-filter { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: var(--color-text-secondary, #888); }
+.history-filter select { padding: 0.4rem 0.75rem; border: 1px solid var(--color-border, #d1d5db); border-radius: 8px; font-size: 0.85rem; outline: none; }
+.history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.approval-card.history { border-left: none; }
+.approval-card.history.approved { border-left: 3px solid #059669; }
+.approval-card.history.rejected { border-left: 3px solid #ef4444; }
+.approval-card.history.expired { border-left: 3px solid #9ca3af; }
+
+/* Empty state */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; color: var(--color-text-secondary, #aaa); gap: 1rem; }
+.empty-state p { font-size: 1rem; }
+
+/* PIN modal */
+.pin-modal { max-width: 380px; text-align: center; }
+.pin-modal h2 { margin-bottom: 0.5rem; }
+.pin-desc { color: var(--color-text-secondary, #888); font-size: 0.85rem; margin-bottom: 1rem; }
+.pin-input-group { margin-bottom: 1rem; }
+.pin-input-group input { width: 100%; text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem; padding: 0.75rem; border: 2px solid var(--color-border, #d1d5db); border-radius: 12px; outline: none; box-sizing: border-box; }
+.pin-input-group input:focus { border-color: var(--color-primary, #6c5ce7); }
+.pin-warn-text { color: #ef4444; font-size: 0.8rem; font-weight: 600; }
+
+.approvals-loading { display: flex; justify-content: center; padding: 3rem; color: var(--color-text-secondary, #888); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .approval-card { flex-direction: column; }
+  .approval-actions { width: 100%; justify-content: flex-end; }
+}

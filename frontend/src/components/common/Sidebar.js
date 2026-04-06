@@ -8,7 +8,7 @@ import {
   FiTool, FiBriefcase, FiRefreshCw, FiActivity, FiClipboard,
   FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight,
   FiClock, FiLayers, FiShield, FiDatabase, FiHash, FiTrendingUp, FiCreditCard,
-  FiPause, FiRotateCcw, FiZap, FiMessageSquare
+  FiPause, FiRotateCcw, FiZap, FiMessageSquare, FiCheckSquare
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -111,6 +111,8 @@ const Sidebar = () => {
         { path: '/tally', icon: <FiRefreshCw />, label: 'Tally Sync', roles: ['admin'] },
         { path: '/audit-trail', icon: <FiEye />, label: 'Audit Trail', roles: ['admin'] },
         { path: '/recycle-bin', icon: <FiTrash2 />, label: 'Recycle Bin', roles: ['admin'] },
+        { path: '/role-management', icon: <FiShield />, label: 'Roles', roles: ['admin'] },
+        { path: '/approvals', icon: <FiCheckSquare />, label: 'Approvals', roles: ['admin', 'manager'] },
         { path: '/settings', icon: <FiSettings />, label: 'Settings', roles: ['admin'] },
       ],
     },

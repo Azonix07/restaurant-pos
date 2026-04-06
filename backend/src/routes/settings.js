@@ -19,6 +19,7 @@ router.put('/ui-mode', auth, authorize('admin', 'manager'), ctrl.updateUIMode);
 
 // Smart alerts
 router.get('/smart-alerts', auth, ctrl.getSmartAlerts);
+router.get('/insights', auth, ctrl.getInsights);
 router.put('/alert-config', auth, authorize('admin'), ctrl.updateAlertConfig);
 
 module.exports = router;
