@@ -47,6 +47,10 @@ const holdRoutes = require('./routes/hold');
 const tokenRoutes = require('./routes/tokens');
 const purchaseRoutes = require('./routes/purchase');
 const settingsRoutes = require('./routes/settings');
+const whatsappRoutes = require('./routes/whatsapp');
+const deliveryRoutes = require('./routes/delivery');
+const pinRoutes = require('./routes/pin');
+const loadTestRoutes = require('./routes/loadTest');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -110,6 +114,10 @@ app.use('/api/hold', holdRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/purchase', purchaseRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/delivery', deliveryRoutes);
+app.use('/api/pin', pinRoutes);
+app.use('/api/load-test', loadTestRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);
@@ -144,6 +152,10 @@ setupSockets(io);
 // Start background fraud monitor
 const { startFraudMonitor } = require('./services/fraudMonitor');
 startFraudMonitor(io);
+
+// Start auto-backup scheduler
+const { startAutoBackup } = require('./services/autoBackup');
+startAutoBackup();
 
 // Start server
 const startServer = async () => {

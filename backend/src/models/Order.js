@@ -58,6 +58,22 @@ const orderSchema = new mongoose.Schema({
     settlementDate: { type: Date },
     settlementRef: { type: String, trim: true },
   },
+  // Delivery info
+  deliveryInfo: {
+    address: { type: String, trim: true },
+    distanceKm: { type: Number },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    deliveryCharge: { type: Number, default: 0 },
+    estimatedTimeMins: { type: Number },
+    status: { type: String, enum: ['pending', 'assigned', 'picked_up', 'on_the_way', 'delivered', 'failed'], default: 'pending' },
+    assignedTo: { type: String, trim: true },
+    pickedUpAt: { type: Date },
+    deliveredAt: { type: Date },
+  },
+  // WhatsApp tracking
+  whatsappSent: { type: Boolean, default: false },
+  whatsappSentAt: { type: Date },
   waiter: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String, trim: true },

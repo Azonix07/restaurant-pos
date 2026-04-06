@@ -1,16 +1,48 @@
 const { SOCKET_EVENTS } = require('../../../shared/constants');
 const Device = require('../models/Device');
 const AlertLog = require('../models/AlertLog');
+const KOT = require('../models/KOT');
 
 // Track connected devices: socketId -> { deviceId, lastHeartbeat }
 const connectedDevices = new Map();
 
 // Heartbeat check interval (runs on master)
 let heartbeatCheckInterval = null;
+let kitchenDelayCheckInterval = null;
 
 const setupSockets = (io) => {
   // Start heartbeat monitor - check every 10 seconds
   if (heartbeatCheckInterval) clearInterval(heartbeatCheckInterval);
+  if (kitchenDelayCheckInterval) clearInterval(kitchenDelayCheckInterval);
+
+  // Kitchen delay monitor — check every 60 seconds for delayed KOTs
+  kitchenDelayCheckInterval = setInterval(async () => {
+    try {
+      const DELAY_THRESHOLD_MINS = 15;
+      const cutoff = new Date(Date.now() - DELAY_THRESHOLD_MINS * 60 * 1000);
+
+      const delayedKots = await KOT.find({
+        status: { $in: ['pending', 'preparing'] },
+        createdAt: { $lt: cutoff },
+      }).lean();
+
+      if (delayedKots.length > 0) {
+        io.to('kitchen').emit('kitchen:delayed', {
+          count: delayedKots.length,
+          kots: delayedKots.map(k => ({
+            kotNumber: k.kotNumber,
+            orderNumber: k.orderNumber,
+            section: k.section,
+            minutesElapsed: Math.floor((Date.now() - new Date(k.createdAt).getTime()) / 60000),
+          })),
+        });
+        io.emit(SOCKET_EVENTS.SOUND_ALERT, { type: 'kitchen_delay', count: delayedKots.length });
+      }
+    } catch (err) {
+      console.error('[KITCHEN DELAY] Check error:', err.message);
+    }
+  }, 60000);
+
   heartbeatCheckInterval = setInterval(async () => {
     const now = Date.now();
     const staleThreshold = 15000; // 15 seconds
@@ -218,10 +250,24 @@ const setupSockets = (io) => {
       if (data.section) {
         socket.to(data.section).emit(SOCKET_EVENTS.KOT_NEW, data);
       }
+      // Sound alert for kitchen displays
+      io.to('kitchen').emit(SOCKET_EVENTS.SOUND_NEW_KOT, {
+        kotNumber: data.kotNumber,
+        section: data.section,
+        itemCount: data.items?.length || 0,
+      });
     });
 
     socket.on(SOCKET_EVENTS.KOT_UPDATE, (data) => {
       socket.broadcast.emit(SOCKET_EVENTS.KOT_UPDATE, data);
+      // Sound alert if all items ready
+      if (data.status === 'ready' || data.allReady) {
+        io.emit(SOCKET_EVENTS.SOUND_ORDER_READY, {
+          orderId: data.orderId,
+          orderNumber: data.orderNumber,
+          tableNumber: data.tableNumber,
+        });
+      }
     });
 
     // ---- DISCONNECT ----

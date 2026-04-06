@@ -61,6 +61,13 @@ const SOCKET_EVENTS = {
   // Menu events
   MENU_UPDATE: 'menu:update',
   MENU_DELETE: 'menu:delete',
+  // Sound alert events
+  SOUND_NEW_KOT: 'sound:newKot',
+  SOUND_ORDER_READY: 'sound:orderReady',
+  SOUND_ALERT: 'sound:alert',
+  // Delivery events
+  DELIVERY_STATUS: 'delivery:statusUpdate',
+  DELIVERY_NEW: 'delivery:new',
 };
 
 const GST_RATES = {
