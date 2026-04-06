@@ -62,6 +62,7 @@ const orderSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String, trim: true },
   completedAt: { type: Date },
+  isTestData: { type: Boolean, default: false },
 }, { timestamps: true });
 
 orderSchema.index({ status: 1, createdAt: -1 });

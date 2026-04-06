@@ -28,3 +28,55 @@
 .topbar-spacer {
   flex: 1;
 }
+
+/* Mode indicators */
+.topbar-indicators {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-badge {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.mode-badge.rush {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.mode-badge.test {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Rush Mode: disable animations and simplify */
+.layout.rush-mode * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.layout.rush-mode .mode-badge {
+  animation: none;
+}
+
+.layout.rush-mode img:not(.brand-icon) {
+  display: none;
+}
+
+/* Test Mode: purple border */
+.layout.test-mode {
+  border-top: 3px solid #a855f7;
+}

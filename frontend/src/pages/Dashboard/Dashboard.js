@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import useSocket from '../../hooks/useSocket';
-import { FiShoppingCart, FiDollarSign, FiUsers, FiTrendingUp, FiClock, FiAlertTriangle } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import { FiShoppingCart, FiDollarSign, FiUsers, FiTrendingUp, FiClock, FiAlertTriangle, FiZap, FiToggleLeft, FiToggleRight, FiPackage, FiInfo } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { toast } from 'react-toastify';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -10,7 +13,10 @@ const Dashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [counterSession, setCounterSession] = useState(null);
   const [fraudAlerts, setFraudAlerts] = useState(null);
+  const [smartAlerts, setSmartAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { hasRole } = useAuth();
+  const { isRushMode, fetchSettings } = useSettings();
 
   const fetchData = async () => {
     try {
@@ -28,6 +34,12 @@ const Dashboard = () => {
         const alertRes = await api.get('/fraud/alerts');
         setFraudAlerts(alertRes.data);
       } catch { /* ignore if not available */ }
+
+      // Fetch smart alerts (non-blocking)
+      try {
+        const smartRes = await api.get('/settings/smart-alerts');
+        setSmartAlerts(smartRes.data.alerts || []);
+      } catch { /* ignore */ }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     } finally {
@@ -52,11 +64,36 @@ const Dashboard = () => {
 
   const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'];
 
+  const toggleRushMode = async () => {
+    try {
+      const res = await api.post('/settings/rush-mode/toggle');
+      toast.success(res.data.message);
+      fetchSettings();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed');
+    }
+  };
+
+  const alertIcon = (type) => ({
+    low_stock: <FiPackage style={{ color: '#f59e0b' }} />,
+    low_raw_material: <FiPackage style={{ color: '#ef4444' }} />,
+    no_sales: <FiInfo style={{ color: '#6b7280' }} />,
+    top_selling: <FiTrendingUp style={{ color: '#22c55e' }} />,
+    dead_stock: <FiAlertTriangle style={{ color: '#f59e0b' }} />,
+  }[type] || <FiInfo />);
+
   return (
     <div className="dashboard">
       <div className="page-header">
         <h1>Dashboard</h1>
-        <span className="text-secondary">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {hasRole('admin', 'manager') && (
+            <button className={`rush-toggle ${isRushMode ? 'active' : ''}`} onClick={toggleRushMode}>
+              <FiZap /> {isRushMode ? 'Disable' : 'Enable'} Rush Mode
+            </button>
+          )}
+          <span className="text-secondary">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
       </div>
 
       <div className="grid-4 mb-24">
@@ -126,6 +163,28 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Smart Alerts */}
+      {smartAlerts.length > 0 && (
+        <div className="smart-alerts mb-24">
+          {smartAlerts.map((alert, i) => (
+            <div key={i} className={`smart-alert smart-alert-${alert.severity}`}>
+              <div className="smart-alert-header">
+                {alertIcon(alert.type)}
+                <strong>{alert.title}</strong>
+              </div>
+              {alert.items?.length > 0 && (
+                <div className="smart-alert-items">
+                  {alert.items.slice(0, 3).map((item, j) => (
+                    <span key={j} className="smart-alert-item">• {item}</span>
+                  ))}
+                  {alert.items.length > 3 && <span className="smart-alert-item text-secondary">+{alert.items.length - 3} more</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid-2 mb-24">
         <div className="card">

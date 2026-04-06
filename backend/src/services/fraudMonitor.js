@@ -107,6 +107,23 @@ exports.startFraudMonitor = (io, intervalMs = 300000) => {
   setTimeout(() => runFraudChecks(io), 10000); // 10s after startup
   monitorInterval = setInterval(() => runFraudChecks(io), intervalMs);
 
+  // Auto-disable test mode checker (every 60s)
+  setInterval(async () => {
+    try {
+      const SystemSettings = require('../models/SystemSettings');
+      const settings = await SystemSettings.getInstance();
+      if (settings.testMode.enabled && settings.testMode.autoDisableAt && new Date() >= settings.testMode.autoDisableAt) {
+        settings.testMode.enabled = false;
+        settings.testMode.enabledAt = null;
+        settings.testMode.enabledBy = null;
+        settings.testMode.autoDisableAt = null;
+        await settings.save();
+        io.emit('settings:testMode', { enabled: false });
+        console.log('[TEST MODE] Auto-disabled after 1 hour');
+      }
+    } catch { /* ignore */ }
+  }, 60000);
+
   console.log(`[FRAUD MONITOR] Started (interval: ${intervalMs / 1000}s)`);
 };
 

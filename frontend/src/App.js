@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import Layout from './components/common/Layout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -46,10 +47,12 @@ import Refunds from './pages/Refunds/Refunds';
 import HeldOrders from './pages/HeldOrders/HeldOrders';
 import TokenQueue from './pages/TokenQueue/TokenQueue';
 import Suppliers from './pages/Suppliers/Suppliers';
+import SystemModes from './pages/SystemModes/SystemModes';
 
 function App() {
   return (
     <AuthProvider>
+      <SettingsProvider>
       <Router>
         <Routes>
           {/* Public routes */}
@@ -159,9 +162,13 @@ function App() {
             <Route path="/suppliers" element={
               <ProtectedRoute roles={['admin', 'manager']}><Suppliers /></ProtectedRoute>
             } />
+            <Route path="/system-modes" element={
+              <ProtectedRoute roles={['admin', 'manager']}><SystemModes /></ProtectedRoute>
+            } />
           </Route>
         </Routes>
       </Router>
+      </SettingsProvider>
       <ToastContainer
         position="top-right"
         autoClose={3000}

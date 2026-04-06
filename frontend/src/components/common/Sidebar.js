@@ -8,7 +8,7 @@ import {
   FiTool, FiBriefcase, FiRefreshCw, FiActivity, FiClipboard,
   FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight,
   FiClock, FiLayers, FiShield, FiDatabase, FiHash, FiTrendingUp, FiCreditCard,
-  FiPause, FiRotateCcw
+  FiPause, FiRotateCcw, FiZap
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -101,6 +101,7 @@ const Sidebar = () => {
       roles: ['admin'],
       items: [
         { path: '/monitoring', icon: <FiActivity />, label: 'Monitoring', roles: ['admin', 'manager'] },
+        { path: '/system-modes', icon: <FiZap />, label: 'System Modes', roles: ['admin', 'manager'] },
         { path: '/fraud-dashboard', icon: <FiShield />, label: 'Anti-Fraud', roles: ['admin', 'manager'] },
         { path: '/staff-analysis', icon: <FiUserCheck />, label: 'Staff Analysis', roles: ['admin', 'manager'] },
         { path: '/backup', icon: <FiDatabase />, label: 'Backup', roles: ['admin'] },

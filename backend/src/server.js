@@ -46,6 +46,7 @@ const refundRoutes = require('./routes/refunds');
 const holdRoutes = require('./routes/hold');
 const tokenRoutes = require('./routes/tokens');
 const purchaseRoutes = require('./routes/purchase');
+const settingsRoutes = require('./routes/settings');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -108,6 +109,7 @@ app.use('/api/refunds', refundRoutes);
 app.use('/api/hold', holdRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/purchase', purchaseRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);
