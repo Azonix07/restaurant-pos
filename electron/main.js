@@ -3,6 +3,7 @@ const path = require('path');
 const { spawn, exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
+const { initAutoUpdater } = require('./updater');
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -348,6 +349,11 @@ app.whenReady().then(async () => {
   // 5. Open the main window immediately — it will either load the app
   //    or show loading.html which polls until the server is up
   createMainWindow(serverReady);
+
+  // 6. Initialize auto-updater (only in packaged builds)
+  if (app.isPackaged && mainWindow) {
+    initAutoUpdater(mainWindow);
+  }
 });
 
 app.on('window-all-closed', () => {

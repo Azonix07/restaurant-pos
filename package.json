@@ -13,6 +13,8 @@
     "build:desktop:win": "cd frontend && npm run build && cd ../electron && npm run build:win",
     "build:desktop:mac": "cd frontend && npm run build && cd ../electron && npm run build:mac",
     "build:desktop:linux": "cd frontend && npm run build && cd ../electron && npm run build:linux",
+    "publish:win": "cd frontend && npm run build && cd ../electron && npm run publish:win",
+    "publish:mac": "cd frontend && npm run build && cd ../electron && npm run publish:mac",
     "seed": "cd backend && node src/seed.js",
     "start:server": "cd backend && npm start",
     "backup": "cd backend && npm run backup"

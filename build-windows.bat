@@ -53,6 +53,11 @@ echo [5/5] Building Windows installer...
 call npx electron-builder --win --x64
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Installer build failed
+    echo.
+    echo Common fixes:
+    echo   - Run as Administrator
+    echo   - Ensure enough disk space
+    echo   - Check electron/dist for partial output
     pause
     exit /b 1
 )

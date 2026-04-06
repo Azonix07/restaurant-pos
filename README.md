@@ -174,10 +174,50 @@ npm run build:frontend
 
 # Start production server
 npm run start:server
-
-# Build Electron app
-cd electron && npm run build
 ```
+
+### Build Desktop Installers
+
+#### Windows (.exe NSIS installer)
+```bash
+# Option 1: Use the batch script
+build-windows.bat
+
+# Option 2: Use npm
+npm run build:desktop:win
+```
+
+#### macOS (.dmg)
+```bash
+# Option 1: Use the shell script
+./build-mac.sh
+
+# Option 2: Use npm
+npm run build:desktop:mac
+```
+
+#### Linux (.AppImage)
+```bash
+npm run build:desktop:linux
+```
+
+### Auto-Update (GitHub Releases)
+
+The desktop app includes automatic update checking via GitHub Releases:
+
+1. Bump the version in `electron/package.json`
+2. Build and publish:
+   ```bash
+   # Windows
+   npm run publish:win
+   
+   # macOS
+   npm run publish:mac
+   ```
+3. Create a GitHub Release with the built artifacts
+4. Running instances will auto-detect and prompt to update
+
+Users can also manually check for updates in **Settings → System → Check for Updates**.
 
 ## License
 

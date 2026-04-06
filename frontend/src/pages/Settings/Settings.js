@@ -389,6 +389,13 @@ const Settings = () => {
       {activeTab === 'system' && (
         <div className="grid-2">
           <div className="card">
+            <h3 className="mb-16">App Updates</h3>
+            <p className="text-secondary mb-16">
+              {window.electronAPI ? 'Check for new versions of the desktop app.' : 'Auto-update is available in the desktop app.'}
+            </p>
+            <AppVersionInfo />
+          </div>
+          <div className="card">
             <h3 className="mb-16">Backup & Restore</h3>
             <p className="text-secondary mb-16">Create a backup of the database or restore from a previous backup.</p>
             <div className="flex gap-8">
@@ -574,6 +581,74 @@ const NetworkTab = () => {
           Use "Force Sync" to manually push/pull data.
         </p>
       </div>
+    </div>
+  );
+};
+
+// ─── App Version & Update Check ──────────────────────────
+const AppVersionInfo = () => {
+  const [version, setVersion] = useState('');
+  const [updateStatus, setUpdateStatus] = useState(null);
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then(v => setVersion(v));
+    }
+    if (window.electronAPI?.onUpdateStatus) {
+      window.electronAPI.onUpdateStatus((data) => {
+        setUpdateStatus(data);
+        if (data.status !== 'checking') setChecking(false);
+      });
+    }
+  }, []);
+
+  const handleCheck = async () => {
+    if (!window.electronAPI?.checkForUpdates) {
+      toast.info('Auto-update is only available in the desktop app');
+      return;
+    }
+    setChecking(true);
+    const result = await window.electronAPI.checkForUpdates();
+    if (!result.success) {
+      toast.error(result.error || 'Update check failed');
+      setChecking(false);
+    }
+  };
+
+  const statusLabel = () => {
+    if (!updateStatus) return null;
+    switch (updateStatus.status) {
+      case 'checking': return <span className="text-secondary">Checking for updates...</span>;
+      case 'available': return <span style={{ color: 'var(--primary)' }}>v{updateStatus.version} available!</span>;
+      case 'up-to-date': return <span style={{ color: 'var(--success)' }}>You're up to date</span>;
+      case 'downloading': return <span style={{ color: 'var(--warning)' }}>Downloading... {updateStatus.percent}%</span>;
+      case 'downloaded': return <span style={{ color: 'var(--success)' }}>v{updateStatus.version} ready to install</span>;
+      case 'error': return <span style={{ color: 'var(--danger)' }}>Error: {updateStatus.message}</span>;
+      default: return null;
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex-between mb-12">
+        <span>Current Version</span>
+        <strong>{version || 'Web'}</strong>
+      </div>
+      {updateStatus && (
+        <div className="flex-between mb-12">
+          <span>Status</span>
+          {statusLabel()}
+        </div>
+      )}
+      {updateStatus?.status === 'downloading' && (
+        <div style={{ background: 'var(--border)', borderRadius: 4, height: 6, marginBottom: 12 }}>
+          <div style={{ background: 'var(--primary)', borderRadius: 4, height: '100%', width: `${updateStatus.percent}%`, transition: 'width 0.3s' }} />
+        </div>
+      )}
+      <button className="btn btn-primary" onClick={handleCheck} disabled={checking}>
+        <FiRefreshCw className={checking ? 'spinning' : ''} /> {checking ? 'Checking...' : 'Check for Updates'}
+      </button>
     </div>
   );
 };

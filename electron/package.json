@@ -13,9 +13,13 @@
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "build:linux": "electron-builder --linux",
+    "publish:win": "electron-builder --win --publish always",
+    "publish:mac": "electron-builder --mac --publish always",
+    "publish:linux": "electron-builder --linux --publish always"
   },
   "dependencies": {
+    "electron-updater": "^6.1.7",
     "mongodb-memory-server-core": "^11.0.1"
   },
   "devDependencies": {
@@ -26,6 +30,14 @@
     "appId": "com.restaurant.pos",
     "productName": "Restaurant POS",
     "artifactName": "Restaurant-POS-Setup-${version}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Azonix07",
+        "repo": "restaurant-pos",
+        "releaseType": "release"
+      }
+    ],
     "directories": {
       "output": "dist"
     },
@@ -34,6 +46,7 @@
       "preload.js",
       "splash.html",
       "loading.html",
+      "updater.js",
       "icon.png",
       "icon.ico",
       "icon.icns"
@@ -63,12 +76,34 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "target": "dmg",
-      "icon": "icon.icns"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    },
+    "dmg": {
+      "title": "Restaurant POS",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
     },
     "win": {
-      "target": "nsis",
-      "icon": "icon.ico"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico",
+      "publisherName": "Restaurant POS"
     },
     "nsis": {
       "oneClick": false,
@@ -77,11 +112,14 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Restaurant POS",
       "perMachine": false,
-      "runAfterFinish": true
+      "runAfterFinish": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico"
     },
     "linux": {
       "target": "AppImage",
-      "category": "Office"
+      "category": "Office",
+      "icon": "icon.png"
     }
   }
 }
