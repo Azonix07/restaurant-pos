@@ -7,7 +7,8 @@ import {
   FiUsers, FiFileText, FiPackage, FiPercent, FiTrash2, FiEye,
   FiTool, FiBriefcase, FiRefreshCw, FiActivity, FiClipboard,
   FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight,
-  FiClock, FiLayers, FiShield, FiDatabase, FiHash, FiTrendingUp, FiCreditCard
+  FiClock, FiLayers, FiShield, FiDatabase, FiHash, FiTrendingUp, FiCreditCard,
+  FiPause, FiRotateCcw
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -43,6 +44,9 @@ const Sidebar = () => {
         { path: '/billing', icon: <FiDollarSign />, label: 'Billing', roles: ['admin', 'manager', 'cashier'] },
         { path: '/counter', icon: <FiClock />, label: 'Counter & Shifts', roles: ['admin', 'manager', 'cashier'] },
         { path: '/customers', icon: <FiUserCheck />, label: 'Customers', roles: ['admin', 'manager', 'cashier'] },
+        { path: '/held-orders', icon: <FiPause />, label: 'Held Orders', roles: ['admin', 'manager', 'cashier'] },
+        { path: '/refunds', icon: <FiRotateCcw />, label: 'Refunds', roles: ['admin', 'manager', 'cashier'] },
+        { path: '/token-queue', icon: <FiHash />, label: 'Token Queue', roles: ['admin', 'manager', 'cashier'] },
       ],
     },
     {
@@ -64,6 +68,7 @@ const Sidebar = () => {
         { path: '/production', icon: <FiLayers />, label: 'Production', roles: ['admin', 'manager'] },
         { path: '/wastage', icon: <FiAlertTriangle />, label: 'Wastage', roles: ['admin', 'manager'] },
         { path: '/barcode-manager', icon: <FiHash />, label: 'Barcode Manager', roles: ['admin', 'manager'] },
+        { path: '/suppliers', icon: <FiTruck />, label: 'Suppliers & Purchase', roles: ['admin', 'manager'] },
       ],
     },
     {

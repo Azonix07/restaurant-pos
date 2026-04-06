@@ -1,0 +1,124 @@
+.held-orders-page { padding: 0; }
+
+.held-count {
+  background: var(--primary, #6366f1);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.held-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg, #1e1e2e);
+  border: 1px solid var(--border, #2d2d3d);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  max-width: 400px;
+}
+
+.held-search .input {
+  border: none;
+  background: transparent;
+  outline: none;
+  flex: 1;
+  color: inherit;
+}
+
+.held-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.held-card {
+  background: var(--card-bg, #1e1e2e);
+  border: 1px solid var(--border, #2d2d3d);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.held-card:hover {
+  border-color: var(--primary, #6366f1);
+}
+
+.held-card.expired {
+  opacity: 0.5;
+  border-color: var(--danger, #ef4444);
+}
+
+.held-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #2d2d3d);
+}
+
+.held-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #f59e0b;
+}
+
+.held-card-body { padding: 12px 16px; }
+
+.held-info {
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.held-info.reason {
+  font-style: italic;
+  padding: 6px 0;
+}
+
+.held-items {
+  border-top: 1px solid var(--border, #2d2d3d);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.held-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 3px 0;
+}
+
+.held-item.more {
+  color: var(--text-secondary, #9ca3af);
+  font-style: italic;
+}
+
+.held-total {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, #2d2d3d);
+  font-size: 16px;
+  text-align: right;
+}
+
+.held-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border, #2d2d3d);
+  justify-content: flex-end;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.empty-state svg { margin-bottom: 12px; opacity: 0.4; }

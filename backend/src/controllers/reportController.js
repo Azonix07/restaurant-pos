@@ -184,3 +184,124 @@ exports.getProfitLoss = async (req, res, next) => {
     next(error);
   }
 };
+
+// Peak hour analysis
+exports.getPeakHourAnalysis = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = new Date(startDate || Date.now() - 7 * 86400000);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate || Date.now());
+    end.setHours(23, 59, 59, 999);
+
+    const hourly = await Order.aggregate([
+      { $match: { createdAt: { $gte: start, $lte: end }, paymentStatus: 'paid' } },
+      {
+        $group: {
+          _id: { $hour: '$createdAt' },
+          orderCount: { $sum: 1 },
+          totalSales: { $sum: '$total' },
+          avgOrderValue: { $avg: '$total' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Fill all 24 hours
+    const hours = Array.from({ length: 24 }, (_, i) => {
+      const found = hourly.find(h => h._id === i);
+      return {
+        hour: i,
+        label: `${String(i).padStart(2, '0')}:00`,
+        orderCount: found?.orderCount || 0,
+        totalSales: found?.totalSales || 0,
+        avgOrderValue: Math.round((found?.avgOrderValue || 0) * 100) / 100,
+      };
+    });
+
+    // Day-of-week analysis
+    const daily = await Order.aggregate([
+      { $match: { createdAt: { $gte: start, $lte: end }, paymentStatus: 'paid' } },
+      {
+        $group: {
+          _id: { $dayOfWeek: '$createdAt' },
+          orderCount: { $sum: 1 },
+          totalSales: { $sum: '$total' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const found = daily.find(d => d._id === i + 1);
+      return {
+        day: i,
+        label: dayNames[i],
+        orderCount: found?.orderCount || 0,
+        totalSales: found?.totalSales || 0,
+      };
+    });
+
+    const peakHour = hours.reduce((max, h) => h.orderCount > max.orderCount ? h : max, hours[0]);
+    const peakDay = days.reduce((max, d) => d.orderCount > max.orderCount ? d : max, days[0]);
+
+    res.json({ hours, days, peakHour, peakDay });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Staff performance report
+exports.getStaffPerformance = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = new Date(startDate || Date.now() - 30 * 86400000);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate || Date.now());
+    end.setHours(23, 59, 59, 999);
+
+    const dateFilter = { createdAt: { $gte: start, $lte: end } };
+
+    // Sales per staff
+    const staffSales = await Order.aggregate([
+      { $match: { ...dateFilter, paymentStatus: 'paid' } },
+      {
+        $group: {
+          _id: '$createdBy',
+          totalSales: { $sum: '$total' },
+          orderCount: { $sum: 1 },
+          avgOrderValue: { $avg: '$total' },
+          totalDiscount: { $sum: '$discount' },
+          cancelCount: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          userId: '$_id',
+          name: '$user.name',
+          role: '$user.role',
+          totalSales: 1,
+          orderCount: 1,
+          avgOrderValue: { $round: ['$avgOrderValue', 2] },
+          totalDiscount: 1,
+          cancelCount: 1,
+        },
+      },
+      { $sort: { totalSales: -1 } },
+    ]);
+
+    res.json({ staffPerformance: staffSales, period: { start, end } });
+  } catch (error) {
+    next(error);
+  }
+};

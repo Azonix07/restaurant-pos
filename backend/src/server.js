@@ -42,6 +42,10 @@ const billPrintRoutes = require('./routes/billPrint');
 const fraudRoutes = require('./routes/fraud');
 const exportRoutes = require('./routes/export');
 const backupRoutes = require('./routes/backup');
+const refundRoutes = require('./routes/refunds');
+const holdRoutes = require('./routes/hold');
+const tokenRoutes = require('./routes/tokens');
+const purchaseRoutes = require('./routes/purchase');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -100,6 +104,10 @@ app.use('/api/bill-print', billPrintRoutes);
 app.use('/api/fraud', fraudRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/refunds', refundRoutes);
+app.use('/api/hold', holdRoutes);
+app.use('/api/tokens', tokenRoutes);
+app.use('/api/purchase', purchaseRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);
@@ -130,6 +138,10 @@ app.use(errorHandler);
 
 // Setup socket events
 setupSockets(io);
+
+// Start background fraud monitor
+const { startFraudMonitor } = require('./services/fraudMonitor');
+startFraudMonitor(io);
 
 // Start server
 const startServer = async () => {

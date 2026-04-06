@@ -7,5 +7,7 @@ router.get('/sales', auth, authorize('admin', 'manager'), ctrl.getSalesReport);
 router.get('/items', auth, authorize('admin', 'manager'), ctrl.getItemWiseSales);
 router.get('/tax', auth, authorize('admin', 'manager'), ctrl.getTaxReport);
 router.get('/profit-loss', auth, authorize('admin', 'manager'), ctrl.getProfitLoss);
+router.get('/peak-hours', auth, authorize('admin', 'manager'), ctrl.getPeakHourAnalysis);
+router.get('/staff-performance', auth, authorize('admin', 'manager'), ctrl.getStaffPerformance);
 
 module.exports = router;

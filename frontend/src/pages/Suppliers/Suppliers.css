@@ -1,0 +1,135 @@
+.suppliers-page { padding: 0; }
+
+.supplier-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg, #1e1e2e);
+  border: 1px solid var(--border, #2d2d3d);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  max-width: 400px;
+}
+
+.supplier-search .input {
+  border: none;
+  background: transparent;
+  outline: none;
+  flex: 1;
+  color: inherit;
+}
+
+.supplier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.supplier-card {
+  background: var(--card-bg, #1e1e2e);
+  border: 1px solid var(--border, #2d2d3d);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.supplier-card:hover { border-color: var(--primary, #6366f1); }
+
+.supplier-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.supplier-card-body { font-size: 14px; }
+
+.supplier-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.balance-due { color: #f59e0b; font-weight: 600; }
+
+.edit-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.supplier-card:hover .edit-btn { opacity: 1; }
+
+/* Purchase Orders */
+.po-list { display: flex; flex-direction: column; gap: 12px; }
+
+.po-card {
+  background: var(--card-bg, #1e1e2e);
+  border: 1px solid var(--border, #2d2d3d);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.po-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #2d2d3d);
+}
+
+.po-date { margin-left: 12px; color: var(--text-secondary, #9ca3af); font-size: 13px; }
+
+.po-status {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.po-card-body { padding: 12px 16px; }
+.po-items-summary { margin-bottom: 4px; }
+.payment-due { color: #f59e0b; }
+
+.po-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border, #2d2d3d);
+  justify-content: flex-end;
+}
+
+/* PO Form */
+.po-form { padding: 20px; }
+
+.po-item-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.po-item-row .input:first-child { flex: 1; }
+.po-item-total { font-weight: 600; min-width: 80px; text-align: right; }
+
+.po-total {
+  font-size: 18px;
+  text-align: right;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #2d2d3d);
+  margin-top: 12px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-lg { max-width: 700px; }

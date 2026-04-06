@@ -42,6 +42,10 @@ import CompanyCredit from './pages/CompanyCredit/CompanyCredit';
 import Backup from './pages/Backup/Backup';
 import BarcodeManager from './pages/BarcodeManager/BarcodeManager';
 import StaffAnalysis from './pages/StaffAnalysis/StaffAnalysis';
+import Refunds from './pages/Refunds/Refunds';
+import HeldOrders from './pages/HeldOrders/HeldOrders';
+import TokenQueue from './pages/TokenQueue/TokenQueue';
+import Suppliers from './pages/Suppliers/Suppliers';
 
 function App() {
   return (
@@ -142,6 +146,18 @@ function App() {
             } />
             <Route path="/staff-analysis" element={
               <ProtectedRoute roles={['admin', 'manager']}><StaffAnalysis /></ProtectedRoute>
+            } />
+            <Route path="/refunds" element={
+              <ProtectedRoute roles={['admin', 'manager', 'cashier']}><Refunds /></ProtectedRoute>
+            } />
+            <Route path="/held-orders" element={
+              <ProtectedRoute roles={['admin', 'manager', 'cashier']}><HeldOrders /></ProtectedRoute>
+            } />
+            <Route path="/token-queue" element={
+              <ProtectedRoute roles={['admin', 'manager', 'cashier']}><TokenQueue /></ProtectedRoute>
+            } />
+            <Route path="/suppliers" element={
+              <ProtectedRoute roles={['admin', 'manager']}><Suppliers /></ProtectedRoute>
             } />
           </Route>
         </Routes>
