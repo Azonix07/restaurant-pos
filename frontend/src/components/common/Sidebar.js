@@ -7,7 +7,7 @@ import {
   FiUsers, FiFileText, FiPackage, FiPercent, FiTrash2, FiEye,
   FiTool, FiBriefcase, FiRefreshCw, FiActivity, FiClipboard,
   FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight,
-  FiClock, FiLayers, FiShield
+  FiClock, FiLayers, FiShield, FiDatabase, FiHash, FiTrendingUp, FiCreditCard
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -63,6 +63,7 @@ const Sidebar = () => {
         { path: '/stock-management', icon: <FiBox />, label: 'Stock & BOM', roles: ['admin', 'manager'] },
         { path: '/production', icon: <FiLayers />, label: 'Production', roles: ['admin', 'manager'] },
         { path: '/wastage', icon: <FiAlertTriangle />, label: 'Wastage', roles: ['admin', 'manager'] },
+        { path: '/barcode-manager', icon: <FiHash />, label: 'Barcode Manager', roles: ['admin', 'manager'] },
       ],
     },
     {
@@ -74,6 +75,8 @@ const Sidebar = () => {
         { path: '/parties', icon: <FiUsers />, label: 'Parties', roles: ['admin', 'manager'] },
         { path: '/accounting', icon: <FiBook />, label: 'Accounting', roles: ['admin', 'manager'] },
         { path: '/reports', icon: <FiBarChart2 />, label: 'Reports', roles: ['admin', 'manager'] },
+        { path: '/sales-history', icon: <FiTrendingUp />, label: 'Sales History', roles: ['admin', 'manager'] },
+        { path: '/company-credit', icon: <FiCreditCard />, label: 'Company Credit', roles: ['admin', 'manager'] },
         { path: '/gst-reports', icon: <FiPercent />, label: 'GST Reports', roles: ['admin', 'manager'] },
         { path: '/fixed-assets', icon: <FiTool />, label: 'Fixed Assets', roles: ['admin', 'manager'] },
       ],
@@ -94,6 +97,8 @@ const Sidebar = () => {
       items: [
         { path: '/monitoring', icon: <FiActivity />, label: 'Monitoring', roles: ['admin', 'manager'] },
         { path: '/fraud-dashboard', icon: <FiShield />, label: 'Anti-Fraud', roles: ['admin', 'manager'] },
+        { path: '/staff-analysis', icon: <FiUserCheck />, label: 'Staff Analysis', roles: ['admin', 'manager'] },
+        { path: '/backup', icon: <FiDatabase />, label: 'Backup', roles: ['admin'] },
         { path: '/devices', icon: <FiCpu />, label: 'Devices', roles: ['admin'] },
         { path: '/companies', icon: <FiBriefcase />, label: 'Companies', roles: ['admin'] },
         { path: '/tally', icon: <FiRefreshCw />, label: 'Tally Sync', roles: ['admin'] },

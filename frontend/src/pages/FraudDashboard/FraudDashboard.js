@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { FiShield, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import { FiShield, FiAlertTriangle, FiCheckCircle, FiUsers } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import './FraudDashboard.css';
 
 const FraudDashboard = () => {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState(null);
   const [recon, setRecon] = useState(null);
   const [activeTab, setActiveTab] = useState('alerts');
@@ -35,6 +37,7 @@ const FraudDashboard = () => {
         <div className="report-tabs">
           <button className={`btn ${activeTab === 'alerts' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('alerts')}>Live Alerts</button>
           <button className={`btn ${activeTab === 'recon' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('recon')}>Reconciliation</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/staff-analysis')}><FiUsers style={{ marginRight: 4 }} />Staff Analysis</button>
         </div>
       </div>
 

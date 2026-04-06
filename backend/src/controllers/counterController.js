@@ -3,6 +3,7 @@ const Order = require('../models/Order');
 const Transaction = require('../models/Transaction');
 const Expense = require('../models/Expense');
 const AuditLog = require('../models/AuditLog');
+const { triggerAutoBackup } = require('./backupController');
 
 // Open a new counter session (shift)
 exports.openSession = async (req, res, next) => {
@@ -97,7 +98,7 @@ exports.getCurrentSession = async (req, res, next) => {
 // Close counter session
 exports.closeSession = async (req, res, next) => {
   try {
-    const { declaredCash, declaredCard, declaredUPI, varianceNote } = req.body;
+    const { declaredCash, declaredCard, declaredUPI, varianceNote, denomination } = req.body;
 
     const session = await CounterSession.findOne({ status: 'open' });
     if (!session) {
@@ -121,7 +122,24 @@ exports.closeSession = async (req, res, next) => {
 
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const expectedCash = session.openingCash + systemCash - totalExpenses;
-    const cashVariance = (declaredCash || 0) - expectedCash;
+
+    // Calculate declared cash from denomination if provided
+    let finalDeclaredCash = declaredCash;
+    if (denomination) {
+      const denomTotal =
+        (denomination.notes2000 || 0) * 2000 +
+        (denomination.notes500 || 0) * 500 +
+        (denomination.notes200 || 0) * 200 +
+        (denomination.notes100 || 0) * 100 +
+        (denomination.notes50 || 0) * 50 +
+        (denomination.notes20 || 0) * 20 +
+        (denomination.notes10 || 0) * 10 +
+        (denomination.coins || 0);
+      finalDeclaredCash = denomTotal;
+      session.closingDenomination = denomination;
+    }
+
+    const cashVariance = (finalDeclaredCash || 0) - expectedCash;
 
     session.systemCash = systemCash;
     session.systemCard = systemCard;
@@ -132,7 +150,7 @@ exports.closeSession = async (req, res, next) => {
     session.totalExpenses = totalExpenses;
     session.totalRefunds = totalRefunds;
     session.gstCollected = gstCollected;
-    session.declaredCash = declaredCash;
+    session.declaredCash = finalDeclaredCash;
     session.declaredCard = declaredCard;
     session.declaredUPI = declaredUPI;
     session.cashVariance = cashVariance;
@@ -157,6 +175,9 @@ exports.closeSession = async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io) io.emit('counter:close', populated);
+
+    // Auto-backup on counter close
+    triggerAutoBackup().catch(() => {});
 
     res.json({ session: populated });
   } catch (error) {
@@ -242,6 +263,42 @@ exports.verifySession = async (req, res, next) => {
     });
 
     res.json({ session });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get denomination report for a session
+exports.getDenominationReport = async (req, res, next) => {
+  try {
+    const session = await CounterSession.findById(req.params.id)
+      .populate('openedBy', 'name')
+      .populate('closedBy', 'name');
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+
+    const denom = session.closingDenomination || {};
+    const denomBreakdown = [
+      { note: '₹2000', count: denom.notes2000 || 0, value: (denom.notes2000 || 0) * 2000 },
+      { note: '₹500', count: denom.notes500 || 0, value: (denom.notes500 || 0) * 500 },
+      { note: '₹200', count: denom.notes200 || 0, value: (denom.notes200 || 0) * 200 },
+      { note: '₹100', count: denom.notes100 || 0, value: (denom.notes100 || 0) * 100 },
+      { note: '₹50', count: denom.notes50 || 0, value: (denom.notes50 || 0) * 50 },
+      { note: '₹20', count: denom.notes20 || 0, value: (denom.notes20 || 0) * 20 },
+      { note: '₹10', count: denom.notes10 || 0, value: (denom.notes10 || 0) * 10 },
+      { note: 'Coins', count: 1, value: denom.coins || 0 },
+    ];
+    const denomTotal = denomBreakdown.reduce((s, d) => s + d.value, 0);
+
+    res.json({
+      sessionDate: session.sessionDate,
+      shiftNumber: session.shiftNumber,
+      openingCash: session.openingCash,
+      declaredCash: session.declaredCash,
+      systemCash: session.systemCash,
+      cashVariance: session.cashVariance,
+      denomBreakdown,
+      denomTotal,
+    });
   } catch (error) {
     next(error);
   }

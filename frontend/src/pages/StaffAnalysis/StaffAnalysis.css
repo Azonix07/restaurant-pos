@@ -1,0 +1,61 @@
+.staff-analysis-page .sa-risk-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 12px;
+}
+.staff-analysis-page .sa-risk-level {
+  font-size: 20px;
+  font-weight: 700;
+}
+.staff-analysis-page .sa-risk-detail {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.staff-analysis-page .sa-section-title {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.staff-analysis-page .sa-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.staff-analysis-page .sa-table th,
+.staff-analysis-page .sa-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.staff-analysis-page .sa-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+.staff-analysis-page .sa-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.staff-analysis-page .sa-alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 16px;
+  border-left: 4px solid;
+}
+.staff-analysis-page .sa-alert.critical { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+.staff-analysis-page .sa-alert.warning { border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.08); }
+.staff-analysis-page .sa-alert.info { border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
+.staff-analysis-page .sa-alert-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.staff-analysis-page .sa-alert-msg {
+  font-size: 14px;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}

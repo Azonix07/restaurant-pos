@@ -37,6 +37,11 @@ import Devices from './pages/Devices/Devices';
 import Counter from './pages/Counter/Counter';
 import ProductionPage from './pages/Production/Production';
 import FraudDashboard from './pages/FraudDashboard/FraudDashboard';
+import SalesHistory from './pages/SalesHistory/SalesHistory';
+import CompanyCredit from './pages/CompanyCredit/CompanyCredit';
+import Backup from './pages/Backup/Backup';
+import BarcodeManager from './pages/BarcodeManager/BarcodeManager';
+import StaffAnalysis from './pages/StaffAnalysis/StaffAnalysis';
 
 function App() {
   return (
@@ -122,6 +127,21 @@ function App() {
             } />
             <Route path="/fraud-dashboard" element={
               <ProtectedRoute roles={['admin', 'manager']}><FraudDashboard /></ProtectedRoute>
+            } />
+            <Route path="/sales-history" element={
+              <ProtectedRoute roles={['admin', 'manager']}><SalesHistory /></ProtectedRoute>
+            } />
+            <Route path="/company-credit" element={
+              <ProtectedRoute roles={['admin', 'manager']}><CompanyCredit /></ProtectedRoute>
+            } />
+            <Route path="/backup" element={
+              <ProtectedRoute roles={['admin']}><Backup /></ProtectedRoute>
+            } />
+            <Route path="/barcode-manager" element={
+              <ProtectedRoute roles={['admin', 'manager']}><BarcodeManager /></ProtectedRoute>
+            } />
+            <Route path="/staff-analysis" element={
+              <ProtectedRoute roles={['admin', 'manager']}><StaffAnalysis /></ProtectedRoute>
             } />
           </Route>
         </Routes>

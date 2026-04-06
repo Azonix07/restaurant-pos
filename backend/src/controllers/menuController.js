@@ -1,5 +1,6 @@
 const MenuItem = require('../models/MenuItem');
 const { SOCKET_EVENTS } = require('../../../shared/constants');
+const { generateEAN13, generateESCPOSBarcodeCommands } = require('../utils/barcode');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -102,6 +103,91 @@ exports.findByBarcode = async (req, res, next) => {
     const item = await MenuItem.findOne({ barcode: req.params.barcode });
     if (!item) return res.status(404).json({ message: 'No item found with this barcode' });
     res.json({ item });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Generate barcode for a menu item
+exports.generateBarcode = async (req, res, next) => {
+  try {
+    const item = await MenuItem.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    if (item.barcode) {
+      return res.json({ item, message: 'Item already has a barcode' });
+    }
+
+    // Generate unique barcode
+    let barcode;
+    let attempts = 0;
+    do {
+      barcode = generateEAN13('200');
+      const existing = await MenuItem.findOne({ barcode });
+      if (!existing) break;
+      attempts++;
+    } while (attempts < 10);
+
+    item.barcode = barcode;
+    await item.save();
+
+    res.json({ item, barcode });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Bulk generate barcodes for items missing them
+exports.bulkGenerateBarcodes = async (req, res, next) => {
+  try {
+    const items = await MenuItem.find({ $or: [{ barcode: null }, { barcode: '' }, { barcode: { $exists: false } }] });
+    const results = [];
+
+    for (const item of items) {
+      let barcode;
+      let attempts = 0;
+      do {
+        barcode = generateEAN13('200');
+        const existing = await MenuItem.findOne({ barcode });
+        if (!existing) break;
+        attempts++;
+      } while (attempts < 10);
+
+      item.barcode = barcode;
+      await item.save();
+      results.push({ id: item._id, name: item.name, barcode });
+    }
+
+    res.json({ generated: results.length, items: results });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Print barcode label via thermal printer
+exports.printBarcode = async (req, res, next) => {
+  try {
+    const item = await MenuItem.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+    if (!item.barcode) return res.status(400).json({ message: 'Item has no barcode. Generate one first.' });
+
+    const { printerIp, printerPort = 9100 } = req.body;
+    if (!printerIp) return res.status(400).json({ message: 'Printer IP is required' });
+
+    const label = `${item.name} - ₹${item.prices?.dineIn || item.prices?.delivery || ''}`;
+    const printData = generateESCPOSBarcodeCommands(item.barcode, label);
+
+    const net = require('net');
+    const client = new net.Socket();
+    client.connect(parseInt(printerPort, 10), printerIp, () => {
+      client.write(printData, () => {
+        client.end();
+        res.json({ message: 'Barcode label sent to printer', barcode: item.barcode });
+      });
+    });
+    client.on('error', (err) => {
+      res.status(500).json({ message: `Printer error: ${err.message}` });
+    });
   } catch (error) {
     next(error);
   }

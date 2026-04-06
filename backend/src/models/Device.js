@@ -25,7 +25,7 @@ const deviceSchema = new mongoose.Schema({
   registeredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   // Kitchen section assignment for display devices
-  kitchenSection: { type: String, enum: ['kitchen', 'bakery', 'bar', 'desserts', null], default: null },
+  kitchenSection: { type: String, enum: ['kitchen', 'veg_kitchen', 'nonveg_kitchen', 'bakery', 'bar', 'juice_counter', 'desserts', null], default: null },
   // LAN printer config for this device
   printerConfig: {
     ip: { type: String },

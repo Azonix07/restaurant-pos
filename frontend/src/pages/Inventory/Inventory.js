@@ -13,6 +13,8 @@ const Inventory = () => {
   const [bulkUpdates, setBulkUpdates] = useState([]);
   const [importText, setImportText] = useState('');
   const [search, setSearch] = useState('');
+  const [editingBarcode, setEditingBarcode] = useState(null);
+  const [barcodeValue, setBarcodeValue] = useState('');
 
   const fetchItems = async () => {
     try {
@@ -78,6 +80,16 @@ const Inventory = () => {
     } catch (err) { toast.error('Failed'); }
   };
 
+  const saveBarcode = async (itemId) => {
+    try {
+      await api.put(`/menu/${itemId}`, { barcode: barcodeValue });
+      toast.success('Barcode saved');
+      setEditingBarcode(null);
+      setBarcodeValue('');
+      fetchItems();
+    } catch (err) { toast.error('Failed to save barcode'); }
+  };
+
   const categories = [...new Set(items.map(i => i.category))];
   const lowStockItems = items.filter(i => (i.stock || 0) <= (i.lowStockThreshold || 10));
 
@@ -110,7 +122,7 @@ const Inventory = () => {
       <div className="card">
         <table className="data-table">
           <thead>
-            <tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Type</th><th>HSN</th><th>Available</th><th>Actions</th></tr>
+            <tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Barcode</th><th>Type</th><th>HSN</th><th>Available</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {(activeTab !== 'all' && activeTab !== 'lowStock' ? items.filter(i => i.category === activeTab) : items).map(item => (
@@ -120,6 +132,31 @@ const Inventory = () => {
                 <td>₹{item.price}</td>
                 <td style={{ color: (item.stock || 0) <= (item.lowStockThreshold || 10) ? 'var(--danger)' : 'var(--text-primary)' }}>
                   {item.stock || 0}
+                </td>
+                <td>
+                  {editingBarcode === item._id ? (
+                    <div className="flex gap-4" style={{ alignItems: 'center' }}>
+                      <input
+                        className="input"
+                        style={{ width: 120, fontSize: 12 }}
+                        value={barcodeValue}
+                        onChange={e => setBarcodeValue(e.target.value)}
+                        placeholder="Scan or type"
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') saveBarcode(item._id); if (e.key === 'Escape') setEditingBarcode(null); }}
+                      />
+                      <button className="btn btn-sm btn-success" onClick={() => saveBarcode(item._id)}>✓</button>
+                      <button className="btn btn-sm btn-secondary" onClick={() => setEditingBarcode(null)}>✕</button>
+                    </div>
+                  ) : (
+                    <span
+                      style={{ cursor: 'pointer', fontSize: 12, color: item.barcode ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                      onClick={() => { setEditingBarcode(item._id); setBarcodeValue(item.barcode || ''); }}
+                      title="Click to edit barcode"
+                    >
+                      {item.barcode || '—  click to set'}
+                    </span>
+                  )}
                 </td>
                 <td>{item.isVeg ? '🟢' : '🔴'}</td>
                 <td>{item.hsn || '-'}</td>

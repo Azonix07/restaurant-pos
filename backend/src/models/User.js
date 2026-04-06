@@ -33,6 +33,8 @@ const userSchema = new mongoose.Schema({
     maxDailyDiscount: { type: Number, default: 0 }, // max total discount per day
     maxSingleDiscount: { type: Number, default: 0 }, // max discount per order
   },
+  // 4-digit PIN for authorizing sensitive operations (admin/manager only)
+  pin: { type: String, select: false },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
@@ -45,9 +47,15 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+userSchema.methods.comparePin = async function (candidatePin) {
+  if (!this.pin) return false;
+  return bcrypt.compare(candidatePin, this.pin);
+};
+
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.pin;
   return obj;
 };
 

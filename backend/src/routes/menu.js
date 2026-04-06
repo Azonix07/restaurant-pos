@@ -13,5 +13,9 @@ router.patch('/:id/toggle', auth, authorize('admin', 'manager'), ctrl.toggleAvai
 router.post('/:id/image', auth, authorize('admin', 'manager'), masterOnly, uploadImage.single('image'), ctrl.uploadImage);
 // Barcode lookup
 router.get('/barcode/:barcode', auth, ctrl.findByBarcode);
+// Barcode generation
+router.post('/:id/barcode', auth, authorize('admin', 'manager'), ctrl.generateBarcode);
+router.post('/barcode/bulk-generate', auth, authorize('admin', 'manager'), ctrl.bulkGenerateBarcodes);
+router.post('/:id/barcode/print', auth, authorize('admin', 'manager'), ctrl.printBarcode);
 
 module.exports = router;

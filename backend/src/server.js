@@ -40,6 +40,8 @@ const counterRoutes = require('./routes/counter');
 const productionRoutes = require('./routes/production');
 const billPrintRoutes = require('./routes/billPrint');
 const fraudRoutes = require('./routes/fraud');
+const exportRoutes = require('./routes/export');
+const backupRoutes = require('./routes/backup');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -96,6 +98,8 @@ app.use('/api/counter', counterRoutes);
 app.use('/api/production', productionRoutes);
 app.use('/api/bill-print', billPrintRoutes);
 app.use('/api/fraud', fraudRoutes);
+app.use('/api/export', exportRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);

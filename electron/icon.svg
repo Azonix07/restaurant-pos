@@ -1,19 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4f46e5"/>
-      <stop offset="100%" style="stop-color:#7c3aed"/>
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
-  <!-- Plate -->
-  <ellipse cx="256" cy="290" rx="150" ry="40" fill="rgba(255,255,255,0.15)"/>
-  <ellipse cx="256" cy="280" rx="130" ry="35" fill="rgba(255,255,255,0.25)"/>
-  <!-- Cloche dome -->
-  <path d="M140 280 Q140 160 256 140 Q372 160 372 280" fill="rgba(255,255,255,0.9)" stroke="white" stroke-width="4"/>
-  <!-- Cloche handle -->
-  <rect x="240" y="120" width="32" height="12" rx="6" fill="white"/>
-  <circle cx="256" cy="118" r="10" fill="white"/>
-  <!-- POS text -->
-  <text x="256" y="370" font-family="Arial,sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="8">POS</text>
+  <rect x="64" y="64" width="896" height="896" rx="220" fill="url(#bg)"/>
+  <g transform="translate(512, 520)">
+    <ellipse cx="0" cy="160" rx="300" ry="55" fill="white" opacity="0.95"/>
+    <ellipse cx="0" cy="150" rx="260" ry="40" fill="#fecaca" opacity="0.3"/>
+    <path d="M -220 120 Q -220 -80 0 -100 Q 220 -80 220 120 Z" fill="url(#plate)"/>
+    <path d="M -140 40 Q -130 -20 0 -30 Q 80 -25 100 0" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+    <path d="M -60 -130 Q -65 -180 -50 -220" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 0 -140 Q -5 -190 10 -230" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 60 -130 Q 55 -180 70 -220" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+    <g transform="translate(-180, -20) rotate(-30)">
+      <path d="M 0 -80 V 20 Q 0 50 15 50 V 100" fill="none" stroke="#fbbf24" stroke-width="16" stroke-linecap="round"/>
+      <ellipse cx="0" cy="-55" rx="22" ry="35" fill="#fbbf24"/>
+    </g>
+    <g transform="translate(180, -20) rotate(30)">
+      <path d="M 0 -80 V 20 Q 0 50 -15 50 V 100" fill="none" stroke="#fbbf24" stroke-width="16" stroke-linecap="round"/>
+      <path d="M -15 -80 V -30 M 0 -80 V -30 M 15 -80 V -30" fill="none" stroke="#fbbf24" stroke-width="7" stroke-linecap="round"/>
+    </g>
+  </g>
 </svg>

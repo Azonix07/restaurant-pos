@@ -28,6 +28,18 @@ const counterSessionSchema = new mongoose.Schema({
   declaredCard: { type: Number },
   declaredUPI: { type: Number },
   
+  // Denomination breakdown at closing
+  closingDenomination: {
+    notes2000: { type: Number, default: 0 },
+    notes500: { type: Number, default: 0 },
+    notes200: { type: Number, default: 0 },
+    notes100: { type: Number, default: 0 },
+    notes50: { type: Number, default: 0 },
+    notes20: { type: Number, default: 0 },
+    notes10: { type: Number, default: 0 },
+    coins: { type: Number, default: 0 },
+  },
+  
   // Variance / discrepancy
   cashVariance: { type: Number, default: 0 }, // declaredCash - (openingCash + systemCash)
   varianceNote: { type: String, trim: true },

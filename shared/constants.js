@@ -15,6 +15,7 @@ const PAYMENT_METHODS = {
   CARD: 'card',
   UPI: 'upi',
   SPLIT: 'split',
+  COMPANY: 'company',
 };
 
 const USER_ROLES = {
@@ -91,8 +92,11 @@ const DEVICE_STATUS = {
 
 const KITCHEN_SECTIONS = {
   KITCHEN: 'kitchen',
+  VEG_KITCHEN: 'veg_kitchen',
+  NONVEG_KITCHEN: 'nonveg_kitchen',
   BAKERY: 'bakery',
   BAR: 'bar',
+  JUICE_COUNTER: 'juice_counter',
   DESSERTS: 'desserts',
 };
 
@@ -120,6 +124,7 @@ const ALERT_TYPES = {
   BILL_MISMATCH: 'bill_mismatch',
   NO_SALES_ACTIVITY: 'no_sales_activity',
   FRAUD_ATTEMPT: 'fraud_attempt',
+  COMPANY_CREDIT_OVERDUE: 'company_credit_overdue',
 };
 
 module.exports = {

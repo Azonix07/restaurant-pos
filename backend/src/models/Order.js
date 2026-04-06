@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema({
   total: { type: Number, default: 0 },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'card', 'upi', 'split', 'pending'],
+    enum: ['cash', 'card', 'upi', 'split', 'company', 'pending'],
     default: 'pending',
   },
   paymentStatus: {
@@ -49,6 +49,15 @@ const orderSchema = new mongoose.Schema({
   externalOrderId: { type: String },
   customerName: { type: String, trim: true },
   customerPhone: { type: String, trim: true },
+  // Company credit billing
+  companyName: { type: String, trim: true },
+  companyCredit: {
+    isCompanyBill: { type: Boolean, default: false },
+    dueAmount: { type: Number, default: 0 },
+    settledAmount: { type: Number, default: 0 },
+    settlementDate: { type: Date },
+    settlementRef: { type: String, trim: true },
+  },
   waiter: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String, trim: true },

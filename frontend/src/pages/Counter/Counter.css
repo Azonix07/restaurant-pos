@@ -8,6 +8,41 @@
 .counter-page .close-form .input-group { margin-bottom: 12px; }
 .counter-page .variance-pos { color: var(--success); font-weight: 700; }
 .counter-page .variance-neg { color: var(--danger); font-weight: 700; }
+
+.denomination-counter {
+  background: var(--bg-body);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+
+.denomination-row-counter {
+  display: grid;
+  grid-template-columns: 60px 16px 80px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.denomination-label-counter {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.session-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
 .counter-page .session-card { padding: 16px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); margin-bottom: 12px; }
 .counter-page .session-card .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 @media (max-width: 768px) { .counter-page .live-grid { grid-template-columns: repeat(2, 1fr); } }

@@ -1,0 +1,69 @@
+.company-credit-page .cc-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.company-credit-page .cc-search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+.company-credit-page .cc-search .input { padding-left: 36px; width: 100%; }
+.company-credit-page .cc-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+.company-credit-page .cc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.company-credit-page .cc-company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+}
+.company-credit-page .cc-company-header:hover { opacity: 0.85; }
+.company-credit-page .cc-bills { padding: 0 16px 16px; }
+.company-credit-page .cc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.company-credit-page .cc-table th,
+.company-credit-page .cc-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.company-credit-page .cc-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.company-credit-page .cc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.company-credit-page .cc-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+}

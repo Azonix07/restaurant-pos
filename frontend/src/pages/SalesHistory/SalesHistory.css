@@ -1,0 +1,40 @@
+.sales-history-page .sh-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sales-history-page .sh-filters .input {
+  width: auto;
+  min-width: 140px;
+}
+.sales-history-page .sh-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.sales-history-page .sh-table th,
+.sales-history-page .sh-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.sales-history-page .sh-table th {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+.sales-history-page .sh-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.sales-history-page .sh-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+}
+.sales-history-page .badge-cash { background: #065f46; color: #ecfdf5; }
+.sales-history-page .badge-card { background: #1e40af; color: #dbeafe; }
+.sales-history-page .badge-upi { background: #7c3aed; color: #ede9fe; }
+.sales-history-page .badge-company { background: #92400e; color: #fef3c7; }

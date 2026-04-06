@@ -173,3 +173,134 @@ exports.getReconciliation = async (req, res, next) => {
     next(error);
   }
 };
+
+// Staff fraud analysis (per-staff cancellation/discount patterns)
+exports.getStaffAnalysis = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = startDate ? new Date(startDate) : new Date(new Date().setHours(0, 0, 0, 0));
+    const end = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : new Date(start.getTime() + 86400000);
+    const dateFilter = { createdAt: { $gte: start, $lt: end } };
+
+    // Per-staff cancellation counts
+    const cancellations = await AuditLog.aggregate([
+      { $match: { ...dateFilter, action: { $in: ['cancel', 'cancel_paid', 'cancel_item'] } } },
+      { $group: { _id: '$userName', count: { $sum: 1 }, actions: { $push: { action: '$action', desc: '$description', date: '$createdAt' } } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    // Per-staff discount totals
+    const discounts = await Order.aggregate([
+      { $match: { ...dateFilter, paymentStatus: 'paid', discount: { $gt: 0 } } },
+      { $group: { _id: '$createdBy', totalDiscount: { $sum: '$discount' }, totalSales: { $sum: '$subtotal' }, orderCount: { $sum: 1 } } },
+      { $sort: { totalDiscount: -1 } },
+    ]);
+
+    // Populate staff names for discount data
+    const User = require('../models/User');
+    for (const d of discounts) {
+      if (d._id) {
+        const user = await User.findById(d._id, 'name');
+        d.staffName = user ? user.name : 'Unknown';
+      }
+      d.discountRate = d.totalSales > 0 ? ((d.totalDiscount / d.totalSales) * 100).toFixed(1) : '0';
+    }
+
+    // Void patterns (orders created then cancelled quickly)
+    const voids = await Order.find({
+      ...dateFilter,
+      status: 'cancelled',
+    }).populate('createdBy', 'name').sort({ createdAt: -1 });
+
+    const quickVoids = voids.filter(v => {
+      const lifespan = (v.updatedAt - v.createdAt) / 60000; // minutes
+      return lifespan < 5;
+    });
+
+    // Generate alerts for suspicious patterns
+    const staffAlerts = [];
+    for (const c of cancellations) {
+      if (c.count > 5) {
+        staffAlerts.push({
+          staff: c._id,
+          type: 'high_cancellations',
+          severity: c.count > 10 ? 'critical' : 'warning',
+          message: `${c._id} made ${c.count} cancellations`,
+        });
+      }
+    }
+    for (const d of discounts) {
+      if (parseFloat(d.discountRate) > 15) {
+        staffAlerts.push({
+          staff: d.staffName,
+          type: 'high_discount_rate',
+          severity: 'warning',
+          message: `${d.staffName} discount rate: ${d.discountRate}% on ${d.orderCount} orders`,
+        });
+      }
+    }
+
+    // Persist critical alerts
+    for (const alert of staffAlerts.filter(a => a.severity === 'critical')) {
+      await AlertLog.create({
+        type: 'FRAUD_STAFF',
+        severity: alert.severity,
+        message: alert.message,
+        metadata: { staff: alert.staff, alertType: alert.type },
+      });
+    }
+
+    res.json({
+      cancellations,
+      discounts,
+      quickVoids: quickVoids.length,
+      voidDetails: quickVoids.slice(0, 20).map(v => ({
+        orderId: v._id,
+        orderNumber: v.orderNumber,
+        staff: v.createdBy?.name,
+        createdAt: v.createdAt,
+        lifespanMinutes: ((v.updatedAt - v.createdAt) / 60000).toFixed(1),
+      })),
+      staffAlerts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get daily fraud summary (for dashboard)
+exports.getDailySummary = async (req, res, next) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today.getTime() + 86400000);
+    const dateFilter = { createdAt: { $gte: today, $lt: endOfDay } };
+
+    const [cancelCount, paidOrders, voidCount, auditActions] = await Promise.all([
+      Order.countDocuments({ ...dateFilter, status: 'cancelled' }),
+      Order.find({ ...dateFilter, paymentStatus: 'paid' }),
+      Order.countDocuments({
+        ...dateFilter,
+        status: 'cancelled',
+        $expr: { $lt: [{ $subtract: ['$updatedAt', '$createdAt'] }, 300000] },
+      }),
+      AuditLog.countDocuments({ ...dateFilter, action: { $in: ['delete', 'cancel', 'cancel_paid'] } }),
+    ]);
+
+    const totalSales = paidOrders.reduce((s, o) => s + o.total, 0);
+    const totalDiscount = paidOrders.reduce((s, o) => s + o.discount, 0);
+
+    res.json({
+      date: today.toISOString().split('T')[0],
+      cancelledOrders: cancelCount,
+      quickVoids: voidCount,
+      auditActions,
+      totalSales,
+      totalDiscount,
+      discountRate: totalSales > 0 ? ((totalDiscount / totalSales) * 100).toFixed(1) : '0',
+      riskLevel: cancelCount > 10 || voidCount > 3 ? 'high' : cancelCount > 5 ? 'medium' : 'low',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

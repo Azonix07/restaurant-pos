@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
 import useSocket from '../../hooks/useSocket';
-import { FiPlus, FiX, FiSearch } from 'react-icons/fi';
+import { FiPlus, FiX, FiSearch, FiEdit2, FiLock } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import './Orders.css';
 
@@ -18,6 +18,11 @@ const Orders = () => {
   const [activeCategory, setActiveCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editCart, setEditCart] = useState([]);
+  const [pinModal, setPinModal] = useState(null);
+  const [pin, setPin] = useState('');
+  const [pinVerified, setPinVerified] = useState(false);
   const barcodeBuffer = useRef('');
   const barcodeTimer = useRef(null);
 
@@ -144,6 +149,100 @@ const Orders = () => {
       fetchOrders();
     } catch (err) {
       toast.error('Failed to update status');
+    }
+  };
+
+  // --- Edit Order (PIN protected) ---
+  const requestEditOrder = (order) => {
+    if (order.paymentStatus === 'paid') {
+      toast.error('Cannot edit a paid order');
+      return;
+    }
+    if (pinVerified) {
+      startEditOrder(order);
+      return;
+    }
+    setPinModal(order);
+    setPin('');
+  };
+
+  const handlePinSubmit = async () => {
+    try {
+      await api.post('/auth/verify-pin', { pin });
+      setPinVerified(true);
+      toast.success('PIN verified');
+      if (pinModal) startEditOrder(pinModal);
+      setPinModal(null);
+      setPin('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Invalid PIN');
+      setPin('');
+    }
+  };
+
+  const startEditOrder = (order) => {
+    setEditingOrder(order);
+    setEditCart(order.items.map(item => ({
+      menuItem: item.menuItem?._id || item.menuItem,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      gstCategory: item.gstCategory || 'food_non_ac',
+      notes: item.notes || '',
+      status: item.status,
+    })));
+    setSelectedOrder(null);
+  };
+
+  const addToEditCart = (item) => {
+    const existing = editCart.find(c => (c.menuItem === item._id || c.menuItem?._id === item._id));
+    if (existing) {
+      setEditCart(editCart.map(c =>
+        (c.menuItem === item._id || c.menuItem?._id === item._id) ? { ...c, quantity: c.quantity + 1 } : c
+      ));
+    } else {
+      setEditCart([...editCart, {
+        menuItem: item._id,
+        name: item.name,
+        price: item.price,
+        quantity: 1,
+        gstCategory: item.gstCategory,
+        notes: '',
+        status: 'placed',
+      }]);
+    }
+  };
+
+  const updateEditCartQuantity = (menuItemId, delta) => {
+    setEditCart(editCart.map(c => {
+      const id = c.menuItem?._id || c.menuItem;
+      if (id === menuItemId) {
+        const newQty = c.quantity + delta;
+        return newQty > 0 ? { ...c, quantity: newQty } : c;
+      }
+      return c;
+    }).filter(c => c.quantity > 0));
+  };
+
+  const removeFromEditCart = (menuItemId) => {
+    setEditCart(editCart.filter(c => {
+      const id = c.menuItem?._id || c.menuItem;
+      return id !== menuItemId;
+    }));
+  };
+
+  const getEditCartTotal = () => editCart.reduce((sum, c) => sum + c.price * c.quantity, 0);
+
+  const saveEditOrder = async () => {
+    if (editCart.length === 0) return toast.error('Order must have at least one item');
+    try {
+      await api.put(`/orders/${editingOrder._id}`, { items: editCart });
+      toast.success('Order updated!');
+      setEditingOrder(null);
+      setEditCart([]);
+      fetchOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update order');
     }
   };
 
@@ -303,7 +402,14 @@ const Orders = () => {
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="flex-between mb-16">
               <h2>Order {selectedOrder.orderNumber}</h2>
-              <button className="btn btn-secondary btn-sm" onClick={() => setSelectedOrder(null)}><FiX /></button>
+              <div className="flex gap-8">
+                {selectedOrder.paymentStatus !== 'paid' && selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
+                  <button className="btn btn-warning btn-sm" onClick={() => requestEditOrder(selectedOrder)}>
+                    <FiEdit2 /> Edit
+                  </button>
+                )}
+                <button className="btn btn-secondary btn-sm" onClick={() => setSelectedOrder(null)}><FiX /></button>
+              </div>
             </div>
             <div className="mb-16">
               <span className={`badge badge-${selectedOrder.status}`}>{selectedOrder.status}</span>
@@ -330,6 +436,110 @@ const Orders = () => {
               {selectedOrder.discount > 0 && <p>Discount: -₹{selectedOrder.discount?.toFixed(2)}</p>}
               <p><strong>Total: ₹{selectedOrder.total?.toFixed(2)}</strong></p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div className="modal-overlay" onClick={() => setEditingOrder(null)}>
+          <div className="new-order-modal" onClick={e => e.stopPropagation()}>
+            <div className="flex-between mb-16">
+              <h2>Edit Order — {editingOrder.orderNumber}</h2>
+              <button className="btn btn-secondary btn-sm" onClick={() => setEditingOrder(null)}><FiX /></button>
+            </div>
+
+            <div className="new-order-layout">
+              {/* Menu side */}
+              <div className="menu-panel">
+                <div className="search-box mb-16">
+                  <FiSearch />
+                  <input className="input" placeholder="Search menu to add items..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                </div>
+
+                <div className="category-tabs mb-16">
+                  <button className={`cat-tab ${!activeCategory ? 'active' : ''}`} onClick={() => setActiveCategory('')}>All</button>
+                  {categories.map(c => (
+                    <button key={c} className={`cat-tab ${activeCategory === c ? 'active' : ''}`} onClick={() => setActiveCategory(c)}>{c}</button>
+                  ))}
+                </div>
+
+                <div className="menu-grid">
+                  {filteredMenu.map(item => (
+                    <button key={item._id} className="menu-item-btn" onClick={() => addToEditCart(item)}>
+                      {item.image && (
+                        <img src={item.image.startsWith('http') ? item.image : `/uploads/images/${item.image}`} alt="" className="menu-item-img" />
+                      )}
+                      <span className={`veg-dot ${item.isVeg ? 'veg' : 'non-veg'}`} />
+                      <span className="menu-item-name">{item.name}</span>
+                      <span className="menu-item-price">₹{item.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Edit Cart side */}
+              <div className="cart-panel">
+                <h3 className="mb-16">Order Items ({editCart.length})</h3>
+                {editCart.length === 0 ? (
+                  <p className="text-secondary text-center">No items in order</p>
+                ) : (
+                  <>
+                    <div className="cart-items">
+                      {editCart.map(item => {
+                        const itemId = item.menuItem?._id || item.menuItem;
+                        return (
+                          <div key={itemId} className="cart-item">
+                            <div className="cart-item-info">
+                              <span className="cart-item-name">{item.name}</span>
+                              <span className="cart-item-price">₹{item.price * item.quantity}</span>
+                            </div>
+                            <div className="cart-item-actions">
+                              <button className="qty-btn" onClick={() => updateEditCartQuantity(itemId, -1)}>-</button>
+                              <span>{item.quantity}</span>
+                              <button className="qty-btn" onClick={() => updateEditCartQuantity(itemId, 1)}>+</button>
+                              <button className="remove-btn" onClick={() => removeFromEditCart(itemId)}><FiX /></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="cart-total">
+                      <strong>Total: ₹{getEditCartTotal().toFixed(2)}</strong>
+                    </div>
+                    <button className="btn btn-success btn-lg" style={{ width: '100%' }} onClick={saveEditOrder}>
+                      Save Changes
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PIN Verification Modal */}
+      {pinModal && (
+        <div className="modal-overlay" onClick={() => setPinModal(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 360 }}>
+            <div className="flex-between mb-16">
+              <h3><FiLock style={{ marginRight: 8 }} />Manager PIN Required</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPinModal(null)}><FiX /></button>
+            </div>
+            <p className="text-secondary mb-16">Enter admin/manager PIN to edit this order</p>
+            <input
+              type="password"
+              className="input mb-16"
+              placeholder="Enter 4-digit PIN"
+              maxLength={4}
+              value={pin}
+              onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={e => e.key === 'Enter' && pin.length === 4 && handlePinSubmit()}
+              autoFocus
+            />
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={handlePinSubmit} disabled={pin.length !== 4}>
+              Verify & Proceed
+            </button>
           </div>
         </div>
       )}

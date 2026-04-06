@@ -1,0 +1,37 @@
+.backup-page .bk-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.backup-page .bk-table th,
+.backup-page .bk-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.backup-page .bk-table th {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+.backup-page .bk-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.backup-page .bk-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.backup-page .bk-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+}

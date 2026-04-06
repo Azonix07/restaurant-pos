@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { FiDownload } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import './Reports.css';
+
+const downloadExport = async (url, filename) => {
+  try {
+    const res = await api.get(url, { responseType: 'blob' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(res.data);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast.success('Downloaded ' + filename);
+  } catch (err) { toast.error('Export failed'); }
+};
 
 const Reports = () => {
   const [activeTab, setActiveTab] = useState('daily');
@@ -56,16 +70,27 @@ const Reports = () => {
     { id: 'tax', label: 'Tax Report' },
   ];
 
+  const exportMap = {
+    daily: { pdf: `/export/reports/daily/pdf?date=${dateRange.startDate}`, excel: `/export/reports/daily/excel?date=${dateRange.startDate}`, name: 'daily-summary' },
+    sales: { pdf: `/export/reports/sales/pdf?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, excel: `/export/reports/sales/excel?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, name: 'sales-report' },
+    items: { pdf: `/export/reports/items/pdf?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, excel: `/export/reports/items/excel?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, name: 'item-sales' },
+    tax: { pdf: `/export/reports/tax/pdf?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, excel: `/export/reports/tax/excel?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, name: 'tax-report' },
+  };
+
   return (
     <div>
       <div className="page-header">
         <h1>Reports</h1>
-        {activeTab !== 'daily' && (
-          <div className="flex gap-8">
-            <input type="date" className="input" style={{ width: 'auto' }} value={dateRange.startDate} onChange={e => setDateRange(prev => ({ ...prev, startDate: e.target.value }))} />
-            <input type="date" className="input" style={{ width: 'auto' }} value={dateRange.endDate} onChange={e => setDateRange(prev => ({ ...prev, endDate: e.target.value }))} />
-          </div>
-        )}
+        <div className="flex gap-8">
+          {activeTab !== 'daily' && (
+            <>
+              <input type="date" className="input" style={{ width: 'auto' }} value={dateRange.startDate} onChange={e => setDateRange(prev => ({ ...prev, startDate: e.target.value }))} />
+              <input type="date" className="input" style={{ width: 'auto' }} value={dateRange.endDate} onChange={e => setDateRange(prev => ({ ...prev, endDate: e.target.value }))} />
+            </>
+          )}
+          <button className="btn btn-secondary" onClick={() => downloadExport(exportMap[activeTab].pdf, exportMap[activeTab].name + '.pdf')}><FiDownload /> PDF</button>
+          <button className="btn btn-success" onClick={() => downloadExport(exportMap[activeTab].excel, exportMap[activeTab].name + '.xlsx')}><FiDownload /> Excel</button>
+        </div>
       </div>
 
       <div className="report-tabs mb-24">

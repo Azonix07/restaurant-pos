@@ -7,6 +7,7 @@ router.get('/:id', auth, authorize('admin'), ctrl.getById);
 router.post('/', auth, authorize('admin'), ctrl.create);
 router.put('/:id', auth, authorize('admin'), ctrl.update);
 router.patch('/:id/default', auth, authorize('admin'), ctrl.setDefault);
+router.patch('/:id/switch', auth, authorize('admin'), ctrl.setDefault);
 router.delete('/:id', auth, authorize('admin'), ctrl.remove);
 
 module.exports = router;

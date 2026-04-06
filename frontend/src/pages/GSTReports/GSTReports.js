@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { FiDownload } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import './GSTReports.css';
+
+const downloadExport = async (url, filename) => {
+  try {
+    const res = await api.get(url, { responseType: 'blob' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(res.data);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast.success('Downloaded ' + filename);
+  } catch (err) { toast.error('Export failed'); }
+};
 
 const GSTReports = () => {
   const [activeTab, setActiveTab] = useState('gstr1');
@@ -33,6 +46,8 @@ const GSTReports = () => {
           <select className="input" style={{ width: 'auto' }} value={year} onChange={e => setYear(e.target.value)}>
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
+          <button className="btn btn-secondary" onClick={() => downloadExport(`/export/gst/pdf?month=${month}&year=${year}&type=${activeTab}`, `${activeTab}-${month}-${year}.pdf`)}><FiDownload /> PDF</button>
+          <button className="btn btn-success" onClick={() => downloadExport(`/export/gst/excel?month=${month}&year=${year}&type=${activeTab}`, `${activeTab}-${month}-${year}.xlsx`)}><FiDownload /> Excel</button>
         </div>
       </div>
 

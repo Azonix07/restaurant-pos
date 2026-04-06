@@ -78,3 +78,73 @@
   transform: translateY(-50%);
   color: var(--text-secondary);
 }
+
+/* Denomination Section */
+.denomination-section {
+  background: var(--bg-body);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.denomination-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.denomination-row {
+  display: grid;
+  grid-template-columns: 70px 20px 80px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.denomination-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.denomination-multiply {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.denomination-input {
+  width: 80px !important;
+  text-align: center !important;
+  padding: 6px 8px !important;
+}
+
+.denomination-subtotal {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.denomination-summary {
+  border-top: 2px solid var(--border);
+  padding-top: 12px;
+}
+
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+
+/* Bill History */
+.bill-history {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 24px;
+  border: 1px solid var(--border);
+}
+
+.bill-history .data-table {
+  width: 100%;
+}
+
+.bill-history tfoot td {
+  border-top: 2px solid var(--text-primary);
+  padding-top: 12px;
+  font-size: 15px;
+}

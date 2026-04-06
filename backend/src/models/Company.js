@@ -8,7 +8,7 @@ const companySchema = new mongoose.Schema({
   phone: { type: String, trim: true },
   email: { type: String, trim: true },
   address: {
-    line1: String, line2: String, city: String, state: String, pincode: String,
+    street: String, line1: String, line2: String, city: String, state: String, pincode: String,
   },
   logo: { type: String },
   invoicePrefix: { type: String, default: 'INV' },

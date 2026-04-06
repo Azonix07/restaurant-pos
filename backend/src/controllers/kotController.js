@@ -15,19 +15,27 @@ const generateKotNumber = async (section) => {
 
 // Determine kitchen section for a menu item
 const getItemSection = async (menuItemId, itemName) => {
-  // Check if recipe has section defined
-  const recipe = await Recipe.findOne({ menuItem: menuItemId });
-  if (recipe) return recipe.kitchenSection;
-
-  // Fallback: determine by category
+  // 1. Check the menu item's own kitchenSection field first (highest priority)
   const menuItem = await MenuItem.findById(menuItemId);
   if (!menuItem) return 'kitchen';
+  if (menuItem.kitchenSection && menuItem.kitchenSection !== 'kitchen') return menuItem.kitchenSection;
 
+  // 2. Check if recipe has section defined
+  const recipe = await Recipe.findOne({ menuItem: menuItemId });
+  if (recipe && recipe.kitchenSection) return recipe.kitchenSection;
+
+  // 3. Fallback: determine by category name and veg/nonveg heuristics
   const cat = menuItem.category.toLowerCase();
+  if (cat.includes('juice') || cat.includes('smoothie') || cat.includes('shake') || cat.includes('lassi')) return 'juice_counter';
   if (cat.includes('bake') || cat.includes('bread') || cat.includes('cake') || cat.includes('pastry')) return 'bakery';
-  if (cat.includes('bar') || cat.includes('drink') || cat.includes('cocktail') || cat.includes('alcohol')) return 'bar';
+  if (cat.includes('bar') || cat.includes('drink') || cat.includes('cocktail') || cat.includes('alcohol') || cat.includes('beer') || cat.includes('wine')) return 'bar';
   if (cat.includes('dessert') || cat.includes('sweet') || cat.includes('ice cream')) return 'desserts';
-  return 'kitchen';
+
+  // 4. Veg/Non-Veg routing based on item property
+  if (menuItem.isVeg === false) return 'nonveg_kitchen';
+  if (menuItem.isVeg === true) return 'veg_kitchen';
+
+  return menuItem.kitchenSection || 'kitchen';
 };
 
 // Generate KOTs for a new order - split by kitchen section
@@ -296,6 +304,156 @@ exports.verifyBilling = async (req, res, next) => {
       mismatches,
       kotCount: kots.length,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Edit KOT item quantity
+exports.editItemQuantity = async (req, res, next) => {
+  try {
+    const { itemId, quantity } = req.body;
+    if (!quantity || quantity < 1) return res.status(400).json({ message: 'Quantity must be at least 1' });
+
+    const kot = await KOT.findById(req.params.id);
+    if (!kot) return res.status(404).json({ message: 'KOT not found' });
+    if (kot.status === 'completed' || kot.status === 'cancelled') {
+      return res.status(400).json({ message: 'Cannot edit a completed/cancelled KOT' });
+    }
+
+    const item = kot.items.id(itemId);
+    if (!item) return res.status(404).json({ message: 'Item not found in KOT' });
+    if (item.status === 'completed' || item.status === 'cancelled') {
+      return res.status(400).json({ message: 'Cannot edit completed/cancelled item' });
+    }
+
+    item.quantity = quantity;
+    await kot.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(kot.section).emit('kot:update', kot);
+      io.emit('kot:update', kot);
+    }
+
+    res.json({ kot });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Cancel a KOT item
+exports.cancelItem = async (req, res, next) => {
+  try {
+    const { itemId, reason } = req.body;
+    const kot = await KOT.findById(req.params.id);
+    if (!kot) return res.status(404).json({ message: 'KOT not found' });
+
+    const item = kot.items.id(itemId);
+    if (!item) return res.status(404).json({ message: 'Item not found in KOT' });
+
+    // Prevent cancel if item is already being prepared — require manager/admin role
+    if (item.status === 'preparing') {
+      const userRole = req.user?.role;
+      if (userRole !== 'admin' && userRole !== 'manager') {
+        return res.status(403).json({
+          message: 'Item is being prepared. Manager/Admin approval required to cancel.',
+          requiresApproval: true,
+        });
+      }
+    }
+
+    if (item.status === 'completed') {
+      return res.status(400).json({ message: 'Cannot cancel a completed item' });
+    }
+
+    item.status = 'cancelled';
+    item.cancelReason = reason || '';
+    item.cancelledBy = req.user?._id;
+
+    // Auto-complete KOT if all items are done
+    if (kot.items.every(i => i.status === 'completed' || i.status === 'cancelled')) {
+      kot.status = 'completed';
+      kot.completedAt = new Date();
+    }
+
+    await kot.save();
+
+    // Audit log for KOT cancellation
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.create({
+      action: 'cancel',
+      module: 'kot_item',
+      documentId: kot._id,
+      documentNumber: kot.kotNumber,
+      description: `KOT item "${item.name}" cancelled. Reason: ${reason || 'No reason'}`,
+      user: req.user?._id,
+      userName: req.user?.name,
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(kot.section).emit('kot:update', kot);
+      io.emit('kot:update', kot);
+    }
+
+    res.json({ kot });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Cancel entire KOT
+exports.cancelKOT = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const kot = await KOT.findById(req.params.id);
+    if (!kot) return res.status(404).json({ message: 'KOT not found' });
+    if (kot.status === 'completed') {
+      return res.status(400).json({ message: 'Cannot cancel completed KOT' });
+    }
+
+    // If any item is being prepared, require manager/admin
+    const hasPreparing = kot.items.some(i => i.status === 'preparing');
+    if (hasPreparing) {
+      const userRole = req.user?.role;
+      if (userRole !== 'admin' && userRole !== 'manager') {
+        return res.status(403).json({
+          message: 'Some items are being prepared. Manager/Admin approval required.',
+          requiresApproval: true,
+        });
+      }
+    }
+
+    kot.status = 'cancelled';
+    kot.cancelReason = reason || '';
+    kot.items.forEach(item => {
+      if (item.status !== 'completed') {
+        item.status = 'cancelled';
+        item.cancelledBy = req.user?._id;
+      }
+    });
+    await kot.save();
+
+    // Audit log
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.create({
+      action: 'cancel',
+      module: 'kot',
+      documentId: kot._id,
+      documentNumber: kot.kotNumber,
+      description: `KOT ${kot.kotNumber} cancelled. Reason: ${reason || 'No reason'}`,
+      user: req.user?._id,
+      userName: req.user?.name,
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(kot.section).emit('kot:update', kot);
+      io.emit('kot:update', kot);
+    }
+
+    res.json({ kot });
   } catch (error) {
     next(error);
   }

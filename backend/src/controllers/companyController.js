@@ -4,7 +4,7 @@ const AuditLog = require('../models/AuditLog');
 exports.getAll = async (req, res, next) => {
   try {
     const companies = await Company.find({ isActive: true }).sort({ isDefault: -1, name: 1 });
-    res.json({ companies });
+    res.json(companies);
   } catch (error) { next(error); }
 };
 

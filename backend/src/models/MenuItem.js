@@ -26,7 +26,7 @@ const menuItemSchema = new mongoose.Schema({
   preparationTime: { type: Number, default: 15 }, // minutes
   kitchenSection: {
     type: String,
-    enum: ['kitchen', 'bakery', 'bar', 'desserts'],
+    enum: ['kitchen', 'veg_kitchen', 'nonveg_kitchen', 'bakery', 'bar', 'juice_counter', 'desserts'],
     default: 'kitchen',
   },
   stock: { type: Number, default: 0 },

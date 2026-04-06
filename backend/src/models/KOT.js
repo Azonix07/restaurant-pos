@@ -12,6 +12,8 @@ const kotItemSchema = new mongoose.Schema({
   },
   // Track if this is a delta (additional items) KOT
   isDelta: { type: Boolean, default: false },
+  cancelReason: { type: String, trim: true },
+  cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { _id: true });
 
 const kotSchema = new mongoose.Schema({
@@ -21,7 +23,7 @@ const kotSchema = new mongoose.Schema({
   tableNumber: { type: Number },
   section: {
     type: String,
-    enum: ['kitchen', 'bakery', 'bar', 'desserts'],
+    enum: ['kitchen', 'veg_kitchen', 'nonveg_kitchen', 'bakery', 'bar', 'juice_counter', 'desserts'],
     required: true,
   },
   items: [kotItemSchema],
@@ -30,7 +32,8 @@ const kotSchema = new mongoose.Schema({
     enum: ['pending', 'acknowledged', 'preparing', 'completed', 'cancelled'],
     default: 'pending',
   },
-  isDelta: { type: Boolean, default: false }, // true if this is an addendum KOT
+  isDelta: { type: Boolean, default: false },
+  cancelReason: { type: String, trim: true }, // true if this is an addendum KOT
   printedAt: { type: Date },
   printerIp: { type: String },
   printCount: { type: Number, default: 0 },

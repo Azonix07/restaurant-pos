@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { FiPlus, FiX, FiFileText, FiSend, FiCheckCircle, FiTruck, FiXCircle } from 'react-icons/fi';
+import { FiPlus, FiX, FiFileText, FiSend, FiCheckCircle, FiTruck, FiXCircle, FiDownload } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import './Invoices.css';
+
+const downloadExport = async (url, filename) => {
+  try {
+    const res = await api.get(url, { responseType: 'blob' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(res.data);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast.success('Downloaded ' + filename);
+  } catch (err) { toast.error('Export failed'); }
+};
 
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
@@ -127,6 +139,8 @@ const Invoices = () => {
         <div className="flex gap-8">
           <input type="date" className="input" style={{ width: 'auto' }} value={dateRange.startDate} onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))} />
           <input type="date" className="input" style={{ width: 'auto' }} value={dateRange.endDate} onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))} />
+          <button className="btn btn-secondary" onClick={() => downloadExport(`/export/invoices/pdf?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&type=${activeTab}`, `invoices-${activeTab}.pdf`)}><FiDownload /> PDF</button>
+          <button className="btn btn-success" onClick={() => downloadExport(`/export/invoices/excel?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&type=${activeTab}`, `invoices-${activeTab}.xlsx`)}><FiDownload /> Excel</button>
         </div>
       </div>
 

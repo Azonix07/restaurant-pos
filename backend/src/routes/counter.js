@@ -8,5 +8,6 @@ router.post('/close', auth, authorize('admin', 'manager', 'cashier'), ctrl.close
 router.get('/history', auth, authorize('admin', 'manager'), ctrl.getSessionHistory);
 router.get('/financial-year', auth, authorize('admin', 'manager'), ctrl.getFinancialYearSummary);
 router.patch('/:id/verify', auth, authorize('admin', 'manager'), ctrl.verifySession);
+router.get('/:id/denomination', auth, authorize('admin', 'manager'), ctrl.getDenominationReport);
 
 module.exports = router;
