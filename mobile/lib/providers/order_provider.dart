@@ -93,7 +93,7 @@ class OrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Submit order to server
+  // Submit order — tries online, falls back to offline queue
   Future<Map<String, dynamic>> submitOrder() async {
     final payload = {
       'items': _cartItems.map((i) {
@@ -118,14 +118,14 @@ class OrderProvider extends ChangeNotifier {
       await fetchActiveOrders();
       return data;
     } catch (e) {
-      // Queue offline
+      // Queue offline — order will sync when connectivity returns
       await OfflineStorage.queueOrder(payload);
       clearCart();
       rethrow;
     }
   }
 
-  // Add items to existing order
+  // Add items to existing order — tries online, queues offline
   Future<void> addItemsToOrder(String orderId) async {
     final items = _cartItems.map((i) {
       return {
@@ -137,26 +137,53 @@ class OrderProvider extends ChangeNotifier {
       };
     }).toList();
 
-    await ApiService.post('/orders/$orderId/items', {'items': items});
-    clearCart();
-    await fetchActiveOrders();
+    try {
+      await ApiService.post('/orders/$orderId/items', {'items': items});
+      clearCart();
+      await fetchActiveOrders();
+    } catch (e) {
+      // Queue for later sync
+      await OfflineStorage.queueItemAddition(orderId, items);
+      clearCart();
+      rethrow;
+    }
   }
 
-  // Fetch active orders
+  // Fetch active orders — cache for offline, fall back to cache
   Future<void> fetchActiveOrders() async {
     _loadingOrders = true;
     notifyListeners();
     try {
       final data = await ApiService.get('/orders/active');
       _activeOrders = List<Map<String, dynamic>>.from(data['orders'] ?? []);
-    } catch (_) {}
+      // Cache for offline use
+      await OfflineStorage.cacheActiveOrders(_activeOrders);
+    } catch (_) {
+      // Load from offline cache
+      final cached = await OfflineStorage.getCachedActiveOrders();
+      _activeOrders = List<Map<String, dynamic>>.from(cached);
+    }
     _loadingOrders = false;
     notifyListeners();
   }
 
-  // Update order status
+  // Update order status — tries online, queues offline
   Future<void> updateOrderStatus(String orderId, String status) async {
-    await ApiService.patch('/orders/$orderId/status', {'status': status});
-    await fetchActiveOrders();
+    try {
+      await ApiService.patch('/orders/$orderId/status', {'status': status});
+      await fetchActiveOrders();
+    } catch (e) {
+      // Queue for later sync
+      await OfflineStorage.queueStatusUpdate(orderId, status);
+      // Optimistically update local cache
+      final idx = _activeOrders.indexWhere((o) => o['_id'] == orderId);
+      if (idx >= 0) {
+        _activeOrders[idx]['status'] = status;
+        _activeOrders[idx]['_offlineUpdate'] = true;
+        await OfflineStorage.cacheActiveOrders(_activeOrders);
+        notifyListeners();
+      }
+      rethrow;
+    }
   }
 }

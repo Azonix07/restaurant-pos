@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/order_provider.dart';
+import 'services/sync_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'theme.dart';
@@ -20,6 +21,7 @@ class POSWaiterApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider.value(value: SyncService.instance..init()),
       ],
       child: Consumer<AuthProvider>(
         builder: (ctx, auth, _) {

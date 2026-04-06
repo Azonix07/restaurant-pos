@@ -244,9 +244,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           icon: const Icon(Icons.check_circle_outline),
                           label: const Text('Mark Served'),
                           onPressed: () async {
-                            await context
-                                .read<OrderProvider>()
-                                .updateOrderStatus(order['_id'], 'served');
+                            try {
+                              await context
+                                  .read<OrderProvider>()
+                                  .updateOrderStatus(order['_id'], 'served');
+                            } catch (_) {
+                              if (ctx.mounted) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Queued offline — will sync when connected'),
+                                    backgroundColor: Color(0xFFF59E0B),
+                                  ),
+                                );
+                              }
+                            }
                             if (ctx.mounted) Navigator.pop(ctx);
                           },
                         ),
@@ -258,9 +269,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           label: const Text('Cancel',
                               style: TextStyle(color: Color(0xFFEF4444))),
                           onPressed: () async {
-                            await context
-                                .read<OrderProvider>()
-                                .updateOrderStatus(order['_id'], 'cancelled');
+                            try {
+                              await context
+                                  .read<OrderProvider>()
+                                  .updateOrderStatus(order['_id'], 'cancelled');
+                            } catch (_) {
+                              if (ctx.mounted) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Queued offline — will sync when connected'),
+                                    backgroundColor: Color(0xFFF59E0B),
+                                  ),
+                                );
+                              }
+                            }
                             if (ctx.mounted) Navigator.pop(ctx);
                           },
                         ),

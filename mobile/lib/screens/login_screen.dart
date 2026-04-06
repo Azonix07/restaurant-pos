@@ -38,6 +38,18 @@ class _LoginScreenState extends State<LoginScreen> {
       await context
           .read<AuthProvider>()
           .login(_emailController.text.trim(), _passwordController.text);
+      // Check if we logged in offline
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        if (auth.offlineMode) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logged in offline with cached credentials'),
+              backgroundColor: Color(0xFFF59E0B),
+            ),
+          );
+        }
+      }
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {

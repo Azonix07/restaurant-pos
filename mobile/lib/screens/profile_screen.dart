@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/sync_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -9,6 +10,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final sync = context.watch<SyncService>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -33,19 +35,38 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                auth.role.toUpperCase(),
-                style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF6366F1)),
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    auth.role.toUpperCase(),
+                    style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF6366F1)),
+                  ),
+                ),
+                if (auth.offlineMode) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'OFFLINE',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFF59E0B)),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 
@@ -68,8 +89,10 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.dns_outlined, size: 18, color: Color(0xFF9CA3AF)),
                       const SizedBox(width: 10),
-                      Text(ApiService.baseUrl,
-                          style: const TextStyle(fontSize: 13)),
+                      Expanded(
+                        child: Text(ApiService.baseUrl,
+                            style: const TextStyle(fontSize: 13)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -77,16 +100,96 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       Container(
                         width: 8, height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFF22C55E),
+                          color: sync.isOnline
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFF59E0B),
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text('Connected',
-                          style: TextStyle(fontSize: 13, color: Color(0xFF22C55E))),
+                      Text(
+                        sync.isOnline ? 'Connected' : 'Offline',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: sync.isOnline
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFF59E0B),
+                        ),
+                      ),
                     ],
                   ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Sync status card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('SYNC STATUS',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF9CA3AF))),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(
+                        sync.pendingCount == 0
+                            ? Icons.check_circle_outline
+                            : Icons.hourglass_bottom,
+                        size: 18,
+                        color: sync.pendingCount == 0
+                            ? const Color(0xFF22C55E)
+                            : const Color(0xFFF59E0B),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        sync.pendingCount == 0
+                            ? 'All data synced'
+                            : '${sync.pendingCount} pending operations',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  if (sync.isSyncing) ...[
+                    const SizedBox(height: 8),
+                    const Row(
+                      children: [
+                        SizedBox(
+                          width: 14, height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Syncing...', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                  if (sync.lastSyncError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      sync.lastSyncError!,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFEF4444)),
+                    ),
+                  ],
+                  if (sync.pendingCount > 0 && sync.isOnline && !sync.isSyncing) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.sync, size: 16),
+                        label: const Text('Sync Now'),
+                        onPressed: () => sync.syncAll(),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -109,7 +212,9 @@ class ProfileScreen extends StatelessWidget {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
+                    content: Text(sync.pendingCount > 0
+                        ? 'You have ${sync.pendingCount} unsynced operations. They will be preserved and sync next time you login. Logout?'
+                        : 'Are you sure you want to logout?'),
                     actions: [
                       TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                       TextButton(
