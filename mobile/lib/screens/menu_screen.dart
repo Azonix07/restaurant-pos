@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/order_provider.dart';
 import '../services/api_service.dart';
 import '../services/offline_storage.dart';
+import '../theme.dart';
 import 'cart_screen.dart';
 
 class MenuScreen extends StatefulWidget {
@@ -64,11 +65,9 @@ class _MenuScreenState extends State<MenuScreen> {
     }
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
-      items = items
-          .where((i) =>
-              (i['name'] as String? ?? '').toLowerCase().contains(q) ||
-              (i['description'] as String? ?? '').toLowerCase().contains(q))
-          .toList();
+      items = items.where((i) =>
+          (i['name'] as String? ?? '').toLowerCase().contains(q) ||
+          (i['description'] as String? ?? '').toLowerCase().contains(q)).toList();
     }
     return items;
   }
@@ -89,38 +88,22 @@ class _MenuScreenState extends State<MenuScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // App bar with search
           SliverAppBar(
             floating: true,
             snap: true,
-            expandedHeight: 120,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-            ),
-            title: Text(
-              widget.existingOrderId != null ? 'Add Items' : 'Menu',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+            title: Text(widget.existingOrderId != null ? 'Add Items' : 'Menu'),
             actions: [
               GestureDetector(
                 onTap: () => setState(() => _vegOnly = !_vegOnly),
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _vegOnly
-                        ? const Color(0xFF22C55E).withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.15),
+                    color: _vegOnly ? AppTheme.successBg : AppTheme.surfaceAlt,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _vegOnly ? const Color(0xFF22C55E) : Colors.white38,
+                      color: _vegOnly ? AppTheme.success : AppTheme.border,
                     ),
                   ),
                   child: Row(
@@ -129,20 +112,20 @@ class _MenuScreenState extends State<MenuScreen> {
                       Container(
                         width: 12, height: 12,
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFF22C55E), width: 2),
+                          border: Border.all(color: AppTheme.success, width: 2),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Center(
                           child: Container(
                             width: 5, height: 5,
-                            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF22C55E)),
+                            decoration: const BoxDecoration(shape: BoxShape.circle, color: AppTheme.success),
                           ),
                         ),
                       ),
                       const SizedBox(width: 4),
                       Text('VEG',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                          color: _vegOnly ? const Color(0xFF22C55E) : Colors.white70)),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                              color: _vegOnly ? AppTheme.success : AppTheme.textMuted)),
                     ],
                   ),
                 ),
@@ -150,30 +133,25 @@ class _MenuScreenState extends State<MenuScreen> {
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(56),
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2E),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: TextField(
                   controller: _searchController,
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search for dishes, cuisines...',
-                    hintStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF6B7280), size: 20),
+                    hintText: 'Search dishes...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: _search.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.close, size: 18, color: Color(0xFF6B7280)),
+                            icon: const Icon(Icons.close, size: 18),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _search = '');
                             },
                           )
                         : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    isDense: true,
                   ),
                   onChanged: (v) => setState(() => _search = v),
                 ),
@@ -201,11 +179,12 @@ class _MenuScreenState extends State<MenuScreen> {
                       label: Text('$cat ($count)'),
                       selected: selected,
                       onSelected: (_) => setState(() => _selectedCategory = cat),
-                      selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                      showCheckmark: false,
-                      labelStyle: TextStyle(fontSize: 12,
+                      selectedColor: AppTheme.accentBg,
+                      labelStyle: TextStyle(
+                        fontSize: 12,
                         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                        color: selected ? const Color(0xFF6366F1) : const Color(0xFF9CA3AF)),
+                        color: selected ? AppTheme.accent : AppTheme.textSecondary,
+                      ),
                     ),
                   );
                 },
@@ -213,11 +192,12 @@ class _MenuScreenState extends State<MenuScreen> {
             ),
           ),
 
+          // Item count
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Text('${filtered.length} items',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
             ),
           ),
 
@@ -229,9 +209,9 @@ class _MenuScreenState extends State<MenuScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.restaurant_menu, size: 64, color: Colors.grey[700]),
+                    Icon(Icons.restaurant_menu, size: 56, color: AppTheme.textMuted.withValues(alpha: 0.4)),
                     const SizedBox(height: 12),
-                    const Text('No dishes found', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16)),
+                    const Text('No dishes found', style: TextStyle(color: AppTheme.textMuted, fontSize: 15)),
                   ],
                 ),
               ),
@@ -249,18 +229,19 @@ class _MenuScreenState extends State<MenuScreen> {
         ],
       ),
 
+      // Cart bar
       floatingActionButton: cart.cartCount > 0
           ? GestureDetector(
               onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => CartScreen(existingOrderId: widget.existingOrderId))),
+                  MaterialPageRoute(builder: (_) => CartScreen(existingOrderId: widget.existingOrderId))),
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF4F46E5)]),
+                  color: AppTheme.accent,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: const Color(0xFF6366F1).withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 4)),
+                    BoxShadow(color: AppTheme.accent.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6)),
                   ],
                 ),
                 child: Row(
@@ -269,14 +250,15 @@ class _MenuScreenState extends State<MenuScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                      child: Text('${cart.cartCount}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                      child: Text('${cart.cartCount}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.white)),
                     ),
                     const SizedBox(width: 12),
-                    const Text('View Cart', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    const Text('View Cart', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white)),
                     const Spacer(),
-                    Text('\u20b9${cart.cartTotal.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text('₹${cart.cartTotal.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white)),
                     const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward_ios, size: 14),
+                    const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white),
                   ],
                 ),
               ),
@@ -293,17 +275,16 @@ class _MenuScreenState extends State<MenuScreen> {
     final desc = item['description'] as String? ?? '';
     final imageUrl = _getImageUrl(item);
     final hasImage = imageUrl.isNotEmpty;
-    final prepTime = item['preparationTime'] as int? ?? 15;
     final cartQty = cart.cartItems
         .where((c) => c['menuItem'] == item['_id'])
         .fold(0, (sum, c) => sum + (c['quantity'] as int));
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2D2D3D)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,17 +293,17 @@ class _MenuScreenState extends State<MenuScreen> {
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: SizedBox(
-                height: 180, width: double.infinity,
+                height: 160, width: double.infinity,
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
                   placeholder: (_, _a) => Container(
-                    color: const Color(0xFF252536),
+                    color: AppTheme.surfaceAlt,
                     child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
                   errorWidget: (_, _a, _b) => Container(
-                    color: const Color(0xFF252536),
-                    child: const Icon(Icons.restaurant, size: 48, color: Color(0xFF4B5563)),
+                    color: AppTheme.surfaceAlt,
+                    child: Icon(Icons.restaurant, size: 48, color: AppTheme.textMuted.withValues(alpha: 0.3)),
                   ),
                 ),
               ),
@@ -336,34 +317,29 @@ class _MenuScreenState extends State<MenuScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(children: [
-                        Container(
-                          width: 16, height: 16,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: isVeg ? const Color(0xFF22C55E) : const Color(0xFFEF4444), width: 2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Center(child: Container(
-                            width: 7, height: 7,
-                            decoration: BoxDecoration(shape: BoxShape.circle,
-                              color: isVeg ? const Color(0xFF22C55E) : const Color(0xFFEF4444)),
-                          )),
+                      // Veg indicator
+                      Container(
+                        width: 16, height: 16,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: isVeg ? AppTheme.success : AppTheme.danger, width: 2),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.timer_outlined, size: 13, color: Colors.grey[500]),
-                        const SizedBox(width: 3),
-                        Text('$prepTime min', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                      ]),
+                        child: Center(child: Container(
+                          width: 7, height: 7,
+                          decoration: BoxDecoration(shape: BoxShape.circle,
+                              color: isVeg ? AppTheme.success : AppTheme.danger),
+                        )),
+                      ),
                       const SizedBox(height: 8),
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, height: 1.2)),
+                      Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                       if (desc.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF), height: 1.3)),
+                            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
                       ],
                       const SizedBox(height: 8),
-                      Text('\u20b9${price.toStringAsFixed(0)}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF6366F1))),
+                      Text('₹${price.toStringAsFixed(0)}',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.accent)),
                     ],
                   ),
                 ),
@@ -371,15 +347,18 @@ class _MenuScreenState extends State<MenuScreen> {
                 Column(children: [
                   if (!hasImage)
                     Container(
-                      width: 100, height: 100,
-                      decoration: BoxDecoration(color: const Color(0xFF252536), borderRadius: BorderRadius.circular(12)),
+                      width: 90, height: 90,
+                      decoration: BoxDecoration(
+                        color: isVeg ? AppTheme.successBg : AppTheme.dangerBg,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Icon(isVeg ? Icons.eco : Icons.restaurant,
-                        color: (isVeg ? const Color(0xFF22C55E) : const Color(0xFFEF4444)).withValues(alpha: 0.3), size: 40),
+                          color: (isVeg ? AppTheme.success : AppTheme.danger).withValues(alpha: 0.4), size: 36),
                     ),
                   const SizedBox(height: 8),
                   if (cartQty > 0)
                     Container(
-                      decoration: BoxDecoration(color: const Color(0xFF6366F1), borderRadius: BorderRadius.circular(10)),
+                      decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(10)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         InkWell(
                           onTap: () {
@@ -387,29 +366,29 @@ class _MenuScreenState extends State<MenuScreen> {
                             if (idx >= 0) cart.updateQuantity(idx, cartQty - 1);
                           },
                           child: const Padding(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            child: Icon(Icons.remove, size: 18, color: Colors.white)),
+                              child: Icon(Icons.remove, size: 18, color: Colors.white)),
                         ),
                         Padding(padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text('$cartQty', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.white))),
+                            child: Text('$cartQty', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.white))),
                         InkWell(
                           onTap: () => cart.addToCart(item),
                           child: const Padding(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            child: Icon(Icons.add, size: 18, color: Colors.white)),
+                              child: Icon(Icons.add, size: 18, color: Colors.white)),
                         ),
                       ]),
                     )
                   else
                     SizedBox(
-                      width: 100, height: 36,
+                      width: 90, height: 36,
                       child: OutlinedButton(
                         onPressed: () => cart.addToCart(item),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF6366F1)),
+                          side: const BorderSide(color: AppTheme.accent),
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('ADD',
-                          style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 1)),
+                            style: TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 1)),
                       ),
                     ),
                 ]),

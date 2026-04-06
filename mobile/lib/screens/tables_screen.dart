@@ -30,7 +30,6 @@ class _TablesScreenState extends State<TablesScreen> {
       _tables = tables;
       await OfflineStorage.cacheTables(tables);
     } catch (_) {
-      // Load from cache
       final cached = await OfflineStorage.getCachedTables();
       _tables = List<Map<String, dynamic>>.from(cached);
     }
@@ -44,45 +43,44 @@ class _TablesScreenState extends State<TablesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final available = _tables.where((t) => t['status'] == 'available').length;
+    final occupied = _tables.where((t) => t['status'] == 'occupied').length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tables'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_outlined, size: 22),
             onPressed: _fetchTables,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MenuScreen()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MenuScreen()));
         },
         icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-        label: const Text('Takeaway'),
-        backgroundColor: const Color(0xFF6366F1),
+        label: const Text('Takeaway', style: TextStyle(fontWeight: FontWeight.w700)),
+        elevation: 2,
       ),
       body: Column(
         children: [
-          // Quick stats
+          // Quick stats row
           if (!_loading && _tables.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Row(
                 children: [
-                  _statBadge('${_tables.where((t) => t['status'] == 'available').length}', 'Free', const Color(0xFF22C55E)),
+                  _statChip('$available Free', AppTheme.success, AppTheme.successBg),
                   const SizedBox(width: 8),
-                  _statBadge('${_tables.where((t) => t['status'] == 'occupied').length}', 'Busy', const Color(0xFFF59E0B)),
+                  _statChip('$occupied Occupied', AppTheme.danger, AppTheme.dangerBg),
                   const SizedBox(width: 8),
-                  _statBadge('${_tables.where((t) => t['status'] == 'reserved').length}', 'Rsv', const Color(0xFF3B82F6)),
-                  const SizedBox(width: 8),
-                  _statBadge('${_tables.length}', 'Total', const Color(0xFF6B7280)),
+                  _statChip('${_tables.length} Total', AppTheme.textMuted, AppTheme.surfaceAlt),
                 ],
               ),
             ),
+
           // Filter chips
           SizedBox(
             height: 50,
@@ -97,6 +95,7 @@ class _TablesScreenState extends State<TablesScreen> {
               ],
             ),
           ),
+
           // Table grid
           Expanded(
             child: _loading
@@ -104,19 +103,26 @@ class _TablesScreenState extends State<TablesScreen> {
                 : RefreshIndicator(
                     onRefresh: _fetchTables,
                     child: _filteredTables.isEmpty
-                        ? const Center(child: Text('No tables found'))
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.table_restaurant_outlined, size: 56, color: AppTheme.textMuted.withValues(alpha: 0.5)),
+                                const SizedBox(height: 12),
+                                const Text('No tables found', style: TextStyle(color: AppTheme.textMuted, fontSize: 15)),
+                              ],
+                            ),
+                          )
                         : GridView.builder(
                             padding: const EdgeInsets.all(16),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 3,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio: 1,
+                              childAspectRatio: 0.9,
                             ),
                             itemCount: _filteredTables.length,
-                            itemBuilder: (ctx, i) =>
-                                _buildTableCard(_filteredTables[i]),
+                            itemBuilder: (ctx, i) => _buildTableCard(_filteredTables[i]),
                           ),
                   ),
           ),
@@ -125,19 +131,17 @@ class _TablesScreenState extends State<TablesScreen> {
     );
   }
 
-  Widget _statBadge(String count, String label, Color color) {
+  Widget _statChip(String label, Color color, Color bg) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: bg,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Column(
-          children: [
-            Text(count, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: color)),
-            Text(label, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.8))),
-          ],
+        child: Center(
+          child: Text(label,
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: color)),
         ),
       ),
     );
@@ -151,8 +155,13 @@ class _TablesScreenState extends State<TablesScreen> {
         label: Text(label),
         selected: selected,
         onSelected: (_) => setState(() => _filter = value),
-        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-        checkmarkColor: Theme.of(context).colorScheme.primary,
+        selectedColor: AppTheme.accentBg,
+        checkmarkColor: AppTheme.accent,
+        labelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: selected ? AppTheme.accent : AppTheme.textSecondary,
+        ),
       ),
     );
   }
@@ -160,11 +169,11 @@ class _TablesScreenState extends State<TablesScreen> {
   Widget _buildTableCard(Map<String, dynamic> table) {
     final status = table['status'] as String? ?? 'available';
     final color = AppTheme.statusColor(status);
+    final bgColor = AppTheme.statusBgColor(status);
     final number = table['number']?.toString() ?? table['name'] ?? '?';
     final capacity = table['capacity'] ?? 4;
     final isOccupied = status == 'occupied';
 
-    // Calculate time for occupied tables
     String? timeLabel;
     if (isOccupied && table['occupiedAt'] != null) {
       try {
@@ -182,66 +191,48 @@ class _TablesScreenState extends State<TablesScreen> {
       onTap: () => _onTableTap(table),
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: 0.15),
-              color.withValues(alpha: 0.05),
-            ],
-          ),
+          color: bgColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.4), width: 2),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Table icon with pulse for occupied
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(Icons.table_restaurant, color: color, size: 32),
-                if (isOccupied && timeLabel != null)
-                  Positioned(
-                    right: -4,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(timeLabel,
-                          style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: Colors.black)),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
+            // Time badge for occupied
+            if (isOccupied && timeLabel != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(timeLabel,
+                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+              )
+            else
+              const SizedBox(height: 14),
+            const SizedBox(height: 4),
             Text('T-$number',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800, fontSize: 18, color: color)),
-            const SizedBox(height: 2),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: color)),
+            const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.people_outline, size: 12, color: color.withValues(alpha: 0.7)),
+                Icon(Icons.people_outline, size: 13, color: color.withValues(alpha: 0.7)),
                 const SizedBox(width: 3),
-                Text('$capacity',
-                    style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.7))),
+                Text('$capacity', style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w500)),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                isOccupied ? 'TAP TO VIEW' : status.toUpperCase(),
-                style: TextStyle(
-                    fontSize: 9, fontWeight: FontWeight.w700, color: color),
+                status.toUpperCase(),
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color, letterSpacing: 0.5),
               ),
             ),
           ],
@@ -253,15 +244,11 @@ class _TablesScreenState extends State<TablesScreen> {
   void _onTableTap(Map<String, dynamic> table) {
     final status = table['status'] as String? ?? 'available';
     if (status == 'available') {
-      // Navigate to menu to create new order for this table
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => MenuScreen(preselectedTable: table),
-        ),
+        MaterialPageRoute(builder: (_) => MenuScreen(preselectedTable: table)),
       );
     } else if (status == 'occupied') {
-      // Show order for this table
       _showTableOrder(table);
     }
   }
@@ -279,10 +266,6 @@ class _TablesScreenState extends State<TablesScreen> {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        backgroundColor: Theme.of(context).cardTheme.color,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
         builder: (ctx) => DraggableScrollableSheet(
           initialChildSize: 0.6,
           minChildSize: 0.3,
@@ -294,98 +277,64 @@ class _TablesScreenState extends State<TablesScreen> {
             children: [
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 40, height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[600],
+                    color: AppTheme.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               Text('Table ${table['number'] ?? table['name']}',
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
               Text('Order #${order['orderNumber'] ?? ''}',
-                  style: const TextStyle(
-                      color: Color(0xFF9CA3AF), fontSize: 13)),
+                  style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
               const SizedBox(height: 16),
-              ...((order['items'] as List?) ?? []).map<Widget>((item) {
-                final i = item as Map<String, dynamic>;
+              ...List<Map<String, dynamic>>.from(order['items'] ?? []).map((item) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: (i['isVeg'] == true)
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFEF4444),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                          child: Text(i['name'] as String? ?? '',
-                              style: const TextStyle(fontSize: 15))),
-                      Text('×${i['quantity']}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 14)),
-                      const SizedBox(width: 12),
-                      Text(
-                          '₹${((i['price'] as num?) ?? 0) * ((i['quantity'] as num?) ?? 1)}',
+                      Text('${item['quantity']}×',
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.accent)),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(
+                        (item['name'] ?? item['menuItem']?['name'] ?? '').toString(),
+                        style: const TextStyle(fontSize: 14),
+                      )),
+                      Text('₹${((item['price'] as num?) ?? 0) * ((item['quantity'] as num?) ?? 1)}',
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                     ],
                   ),
                 );
               }),
-              const Divider(height: 32),
+              const Divider(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700)),
-                  Text('₹${(order['total'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  const Text('Total', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text('₹${((order['total'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.accent)),
                 ],
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MenuScreen(
-                              preselectedTable: table,
-                              existingOrderId: id.toString(),
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Items'),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('Add More Items'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => MenuScreen(
+                      preselectedTable: table,
+                      existingOrderId: order['_id'],
+                    )),
+                  );
+                },
               ),
             ],
           ),
         ),
       );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load order: $e')),
-        );
-      }
-    }
+    } catch (_) {}
   }
 }

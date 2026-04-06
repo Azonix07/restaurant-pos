@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/sync_service.dart';
 import '../services/network_service.dart';
 import '../providers/order_provider.dart';
+import '../theme.dart';
 import 'tables_screen.dart';
 import 'orders_screen.dart';
 import 'menu_screen.dart';
@@ -29,126 +30,112 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final sync = context.watch<SyncService>();
-    final net = context.watch<NetworkService>();
+    context.watch<NetworkService>();
 
     return Scaffold(
       body: Stack(
         children: [
           Column(
             children: [
-              // Network connection type indicator
-              if (net.isConnected && !sync.isSyncing && sync.isOnline)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  color: net.isLanMode
-                      ? const Color(0xFF22C55E).withValues(alpha: 0.08)
-                      : const Color(0xFF6366F1).withValues(alpha: 0.08),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Row(
-                      children: [
-                        Icon(
-                          net.isLanMode ? Icons.wifi : Icons.cloud_done,
-                          size: 14,
-                          color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          net.isLanMode ? 'LAN WiFi' : 'Online',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              // Offline / syncing banner
+              // Offline banner
               if (!sync.isOnline)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.cloud_off, size: 16, color: Color(0xFFF59E0B)),
-                        const SizedBox(width: 8),
-                        const Expanded(
+                  padding: EdgeInsets.only(
+                    left: 16, right: 16, bottom: 8,
+                    top: MediaQuery.of(context).padding.top + 8,
+                  ),
+                  color: AppTheme.warningBg,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cloud_off_outlined, size: 16, color: AppTheme.warning),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Offline — changes will sync when connected',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppTheme.warning),
+                        ),
+                      ),
+                      if (sync.pendingCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.warning,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           child: Text(
-                            'Offline — changes will sync when connected',
-                            style: TextStyle(fontSize: 12, color: Color(0xFFF59E0B)),
+                            '${sync.pendingCount}',
+                            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700),
                           ),
                         ),
-                        if (sync.pendingCount > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${sync.pendingCount} pending',
-                              style: const TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
                 )
               else if (sync.isSyncing)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                  child: SafeArea(
-                    bottom: false,
-                    child: const Row(
-                      children: [
-                        SizedBox(
-                          width: 14, height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Syncing offline data...',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF6366F1)),
-                        ),
-                      ],
-                    ),
+                  padding: EdgeInsets.only(
+                    left: 16, right: 16, bottom: 6,
+                    top: MediaQuery.of(context).padding.top + 6,
+                  ),
+                  color: AppTheme.accentBg,
+                  child: const Row(
+                    children: [
+                      SizedBox(
+                        width: 12, height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Syncing...',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.accent),
+                      ),
+                    ],
                   ),
                 ),
               // Main content
               Expanded(child: _screens[_currentIndex]),
             ],
           ),
-          // Floating AI Chat Button (admin/manager only)
+          // AI Chat FAB
           const AIChatFab(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) {
-          setState(() => _currentIndex = i);
-          // Refresh orders when switching to orders tab
-          if (i == 2) {
-            context.read<OrderProvider>().fetchActiveOrders();
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.table_restaurant), label: 'Tables'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.restaurant_menu), label: 'Menu'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long), label: 'Orders'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppTheme.border, width: 1)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) {
+            setState(() => _currentIndex = i);
+            if (i == 2) {
+              context.read<OrderProvider>().fetchActiveOrders();
+            }
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.table_restaurant_outlined),
+              selectedIcon: Icon(Icons.table_restaurant),
+              label: 'Tables',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.restaurant_menu_outlined),
+              selectedIcon: Icon(Icons.restaurant_menu),
+              label: 'Menu',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long),
+              label: 'Orders',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }

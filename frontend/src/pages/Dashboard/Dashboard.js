@@ -52,7 +52,12 @@ const Dashboard = () => {
   useSocket('order:new', () => fetchData());
   useSocket('order:statusChange', () => fetchData());
 
-  if (loading) return <div className="text-center mt-16">Loading dashboard...</div>;
+  if (loading) return (
+    <div className="loading-container">
+      <div className="loading-spinner" />
+      <p>Loading dashboard...</p>
+    </div>
+  );
 
   const paymentData = summary ? Object.entries(summary.paymentBreakdown || {}).map(([name, value]) => ({
     name: name.toUpperCase(), value,
@@ -75,18 +80,18 @@ const Dashboard = () => {
   };
 
   const alertIcon = (type) => ({
-    low_stock: <FiPackage style={{ color: '#f59e0b' }} />,
-    low_raw_material: <FiPackage style={{ color: '#ef4444' }} />,
-    no_sales: <FiInfo style={{ color: '#6b7280' }} />,
-    top_selling: <FiTrendingUp style={{ color: '#22c55e' }} />,
-    dead_stock: <FiAlertTriangle style={{ color: '#f59e0b' }} />,
+    low_stock: <FiPackage className="alert-icon-warning" />,
+    low_raw_material: <FiPackage className="alert-icon-danger" />,
+    no_sales: <FiInfo className="alert-icon-muted" />,
+    top_selling: <FiTrendingUp className="alert-icon-success" />,
+    dead_stock: <FiAlertTriangle className="alert-icon-warning" />,
   }[type] || <FiInfo />);
 
   return (
     <div className="dashboard">
       <div className="page-header">
         <h1>Dashboard</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="flex gap-16" style={{ alignItems: 'center' }}>
           {hasRole('admin', 'manager') && (
             <button className={`rush-toggle ${isRushMode ? 'active' : ''}`} onClick={toggleRushMode}>
               <FiZap /> {isRushMode ? 'Disable' : 'Enable'} Rush Mode
@@ -122,43 +127,43 @@ const Dashboard = () => {
       {/* Counter Session & Fraud Alerts */}
       <div className="grid-2 mb-24">
         <div className="card">
-          <h3 className="mb-12"><FiClock style={{ marginRight: 6 }} />Counter Status</h3>
+          <h3 className="mb-12"><FiClock className="dashboard-inline-icon" />Counter Status</h3>
           {counterSession ? (
             <div>
-              <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 99, background: '#ecfdf5', color: '#065f46', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>● Open — Shift #{counterSession.shiftNumber}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+              <div className="dashboard-counter-badge">● Open — Shift #{counterSession.shiftNumber}</div>
+              <div className="dashboard-counter-grid">
                 <div><span className="text-secondary">Opening Cash:</span> ₹{counterSession.openingCash?.toLocaleString('en-IN')}</div>
                 <div><span className="text-secondary">Cash Sales:</span> ₹{(counterSession.systemCash || 0).toLocaleString('en-IN')}</div>
                 <div><span className="text-secondary">Total Sales:</span> ₹{(counterSession.systemTotal || 0).toLocaleString('en-IN')}</div>
                 <div><span className="text-secondary">Orders:</span> {counterSession.totalOrders || 0}</div>
               </div>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 8 }}>Opened by {counterSession.openedBy?.name} at {new Date(counterSession.openedAt).toLocaleTimeString('en-IN')}</p>
+              <p className="dashboard-counter-meta">Opened by {counterSession.openedBy?.name} at {new Date(counterSession.openedAt).toLocaleTimeString('en-IN')}</p>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <p style={{ color: 'var(--danger)', fontWeight: 600 }}>Counter is Closed</p>
-              <p className="text-secondary" style={{ fontSize: 12 }}>Go to Counter & Shifts to open a new session</p>
+             <div className="dashboard-counter-closed">
+               <p className="dashboard-counter-closed-title">Counter is Closed</p>
+               <p className="text-secondary dashboard-counter-hint">Go to Counter & Shifts to open a new session</p>
             </div>
           )}
         </div>
 
         {fraudAlerts && fraudAlerts.totalAlerts > 0 ? (
-          <div className="card" style={{ borderLeft: `4px solid ${fraudAlerts.criticalCount > 0 ? 'var(--danger)' : 'var(--warning)'}` }}>
-            <h3 className="mb-12"><FiAlertTriangle style={{ marginRight: 6, color: 'var(--danger)' }} />Fraud Alerts</h3>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-              <span style={{ fontWeight: 700, color: 'var(--danger)' }}>{fraudAlerts.criticalCount} Critical</span>
-              <span style={{ fontWeight: 700, color: 'var(--warning)' }}>{fraudAlerts.warningCount} Warnings</span>
+          <div className="card dashboard-fraud-card" style={{ borderLeft: `4px solid ${fraudAlerts.criticalCount > 0 ? 'var(--danger)' : 'var(--warning)'}` }}>
+            <h3 className="mb-12"><FiAlertTriangle className="dashboard-inline-icon text-danger" />Fraud Alerts</h3>
+            <div className="dashboard-alert-counts">
+              <span className="dashboard-alert-critical">{fraudAlerts.criticalCount} Critical</span>
+              <span className="dashboard-alert-warning">{fraudAlerts.warningCount} Warnings</span>
             </div>
             {fraudAlerts.alerts?.slice(0, 3).map((a, i) => (
-              <p key={i} style={{ fontSize: 12, marginBottom: 4, color: a.severity === 'critical' ? 'var(--danger)' : 'var(--text-secondary)' }}>• {a.message}</p>
+              <p key={i} className={`dashboard-alert-msg ${a.severity === 'critical' ? 'critical' : ''}`}>• {a.message}</p>
             ))}
           </div>
         ) : (
           <div className="card">
-            <h3 className="mb-12"><FiAlertTriangle style={{ marginRight: 6 }} />System Status</h3>
-            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--success)' }}>
-              <p style={{ fontWeight: 600 }}>✓ All Clear</p>
-              <p className="text-secondary" style={{ fontSize: 12 }}>No fraud alerts today</p>
+            <h3 className="mb-12"><FiAlertTriangle className="dashboard-inline-icon" />System Status</h3>
+            <div className="dashboard-all-clear">
+              <p className="dashboard-all-clear-title">✓ All Clear</p>
+              <p className="text-secondary dashboard-counter-hint">No fraud alerts today</p>
             </div>
           </div>
         )}

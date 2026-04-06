@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/order_provider.dart';
+import '../theme.dart';
 
 class CartScreen extends StatefulWidget {
   final String? existingOrderId;
@@ -21,9 +22,7 @@ class _CartScreenState extends State<CartScreen> {
     final cart = context.watch<OrderProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingOrderId != null
-            ? 'Add to Order'
-            : 'Review Order'),
+        title: Text(widget.existingOrderId != null ? 'Add to Order' : 'Review Order'),
         actions: [
           if (cart.cartItems.isNotEmpty)
             TextButton(
@@ -31,18 +30,18 @@ class _CartScreenState extends State<CartScreen> {
                 cart.clearCart();
                 Navigator.pop(context);
               },
-              child: const Text('Clear', style: TextStyle(color: Color(0xFFEF4444))),
+              child: const Text('Clear', style: TextStyle(color: AppTheme.danger)),
             ),
         ],
       ),
       body: cart.cartItems.isEmpty
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 64, color: Color(0xFF6B7280)),
-                  SizedBox(height: 12),
-                  Text('Cart is empty', style: TextStyle(color: Color(0xFF9CA3AF))),
+                  Icon(Icons.shopping_cart_outlined, size: 56, color: AppTheme.textMuted.withValues(alpha: 0.4)),
+                  const SizedBox(height: 12),
+                  const Text('Cart is empty', style: TextStyle(color: AppTheme.textMuted, fontSize: 15)),
                 ],
               ),
             )
@@ -57,35 +56,31 @@ class _CartScreenState extends State<CartScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                            color: AppTheme.accentBg,
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.table_restaurant, color: Color(0xFF6366F1)),
+                              const Icon(Icons.table_restaurant, color: AppTheme.accent, size: 20),
                               const SizedBox(width: 10),
                               Text(
                                 'Table ${cart.selectedTable!['number'] ?? cart.selectedTable!['name']}',
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppTheme.accent),
                               ),
                               const Spacer(),
                               TextButton(
-                                onPressed: () {
-                                  cart.setTable(null);
-                                },
+                                onPressed: () => cart.setTable(null),
                                 child: const Text('Change'),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                       ],
 
-                      // Order type (only for new orders)
+                      // Order type
                       if (widget.existingOrderId == null) ...[
-                        const Text('Order Type',
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF9CA3AF))),
+                        Text('ORDER TYPE', style: Theme.of(context).textTheme.labelSmall),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
@@ -95,106 +90,103 @@ class _CartScreenState extends State<CartScreen> {
                               label: Text(t.replaceAll('_', ' ').toUpperCase()),
                               selected: selected,
                               onSelected: (_) => cart.setOrderType(t),
-                              selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                              selectedColor: AppTheme.accentBg,
+                              labelStyle: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600,
+                                color: selected ? AppTheme.accent : AppTheme.textSecondary,
+                              ),
                             );
                           }).toList(),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                       ],
 
-                      // Cart Items
-                      const Text('ITEMS',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF9CA3AF))),
+                      // Items header
+                      Text('ITEMS', style: Theme.of(context).textTheme.labelSmall),
                       const SizedBox(height: 8),
                       ...List.generate(cart.cartItems.length, (i) {
                         final item = cart.cartItems[i];
                         final qty = item['quantity'] as int;
                         final price = (item['price'] as num).toDouble();
-                        return Card(
+                        return Container(
                           margin: const EdgeInsets.only(bottom: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            child: Row(
-                              children: [
-                                // Veg indicator
-                                Container(
-                                  width: 10, height: 10,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: item['isVeg'] == true
-                                        ? const Color(0xFF22C55E)
-                                        : const Color(0xFFEF4444),
-                                  ),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.border),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 10, height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: item['isVeg'] == true ? AppTheme.success : AppTheme.danger,
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item['name'] as String,
-                                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                                      Text('₹${price.toStringAsFixed(0)} each',
-                                          style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
-                                    ],
-                                  ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item['name'] as String,
+                                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    Text('₹${price.toStringAsFixed(0)} each',
+                                        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                                  ],
                                 ),
-                                // Qty controls
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF252536),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.remove, size: 16),
-                                        onPressed: () => cart.updateQuantity(i, qty - 1),
-                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                      Text('$qty', style: const TextStyle(fontWeight: FontWeight.w700)),
-                                      IconButton(
-                                        icon: const Icon(Icons.add, size: 16),
-                                        onPressed: () => cart.updateQuantity(i, qty + 1),
-                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                    ],
-                                  ),
+                              ),
+                              // Qty controls
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppTheme.surfaceAlt,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppTheme.border),
                                 ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  width: 60,
-                                  child: Text(
-                                    '₹${(price * qty).toStringAsFixed(0)}',
-                                    style: const TextStyle(fontWeight: FontWeight.w700),
-                                    textAlign: TextAlign.right,
-                                  ),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove, size: 16),
+                                      onPressed: () => cart.updateQuantity(i, qty - 1),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    Text('$qty', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    IconButton(
+                                      icon: const Icon(Icons.add, size: 16),
+                                      onPressed: () => cart.updateQuantity(i, qty + 1),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 60,
+                                child: Text(
+                                  '₹${(price * qty).toStringAsFixed(0)}',
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }),
 
                       const SizedBox(height: 16),
-                      // Customer info (optional)
                       if (widget.existingOrderId == null) ...[
                         TextField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Customer Name (optional)',
-                            isDense: true,
-                          ),
+                          decoration: const InputDecoration(labelText: 'Customer Name (optional)', isDense: true),
                           onChanged: (v) => cart.setCustomerInfo(v, _phoneController.text),
                         ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: _phoneController,
-                          decoration: const InputDecoration(
-                            labelText: 'Phone (optional)',
-                            isDense: true,
-                          ),
+                          decoration: const InputDecoration(labelText: 'Phone (optional)', isDense: true),
                           keyboardType: TextInputType.phone,
                           onChanged: (v) => cart.setCustomerInfo(_nameController.text, v),
                         ),
@@ -202,22 +194,19 @@ class _CartScreenState extends State<CartScreen> {
                       ],
                       TextField(
                         controller: _notesController,
-                        decoration: const InputDecoration(
-                          labelText: 'Notes (optional)',
-                          isDense: true,
-                        ),
+                        decoration: const InputDecoration(labelText: 'Notes (optional)', isDense: true),
                         onChanged: (v) => cart.setNotes(v),
                       ),
                     ],
                   ),
                 ),
 
-                // Bottom total + submit
+                // Bottom bar
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    border: const Border(top: BorderSide(color: Color(0xFF2D2D3D))),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.surface,
+                    border: Border(top: BorderSide(color: AppTheme.border)),
                   ),
                   child: SafeArea(
                     child: Column(
@@ -225,26 +214,24 @@ class _CartScreenState extends State<CartScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('${cart.cartCount} items',
-                                style: const TextStyle(color: Color(0xFF9CA3AF))),
-                            Text('₹${cart.cartTotal.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                    fontSize: 22, fontWeight: FontWeight.w700)),
+                            Text('${cart.cartCount} items', style: const TextStyle(color: AppTheme.textSecondary)),
+                            Text('₹${cart.cartTotal.toStringAsFixed(0)}',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.accent)),
                           ],
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
+                          height: 50,
                           child: ElevatedButton(
                             onPressed: _submitting ? null : _submit,
                             child: _submitting
-                                ? const SizedBox(
-                                    height: 20, width: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: Colors.white))
-                                : Text(widget.existingOrderId != null
-                                    ? 'Add Items to Order'
-                                    : 'Place Order & Send KOT'),
+                                ? const SizedBox(height: 20, width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : Text(
+                                    widget.existingOrderId != null ? 'Add Items to Order' : 'Place Order & Send KOT',
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                                  ),
                           ),
                         ),
                       ],
@@ -264,8 +251,7 @@ class _CartScreenState extends State<CartScreen> {
         await cart.addItemsToOrder(widget.existingOrderId!);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Items added! KOT sent to kitchen.'),
-                backgroundColor: Color(0xFF22C55E)),
+            const SnackBar(content: Text('Items added! KOT sent to kitchen.'), backgroundColor: AppTheme.success),
           );
           Navigator.popUntil(context, (r) => r.isFirst);
         }
@@ -274,9 +260,7 @@ class _CartScreenState extends State<CartScreen> {
         final orderNum = data['order']?['orderNumber'] ?? '';
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Order #$orderNum placed! KOT sent.'),
-                backgroundColor: const Color(0xFF22C55E)),
+            SnackBar(content: Text('Order #$orderNum placed! KOT sent.'), backgroundColor: AppTheme.success),
           );
           Navigator.popUntil(context, (r) => r.isFirst);
         }
@@ -284,10 +268,7 @@ class _CartScreenState extends State<CartScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Order queued offline. Will sync when connected.'),
-            backgroundColor: const Color(0xFFF59E0B),
-          ),
+          const SnackBar(content: Text('Order queued offline. Will sync when connected.'), backgroundColor: AppTheme.warning),
         );
         Navigator.popUntil(context, (r) => r.isFirst);
       }

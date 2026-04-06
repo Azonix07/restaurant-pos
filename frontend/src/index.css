@@ -10,6 +10,15 @@
   --accent-bg: #eef2ff;
   --accent-border: #c7d2fe;
   --accent-gradient: linear-gradient(135deg, #4f46e5, #6366f1);
+  --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.15);
+
+  /* ─── Aliases for pages using --color-* variables ─── */
+  --color-primary: #4f46e5;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8fafc;
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-border: #e2e8f0;
 
   /* ─── Surfaces ──────────────────────────── */
   --bg-body: #f1f5f9;
@@ -23,6 +32,8 @@
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
+  --text-dark-warning: #b45309;
+  --text-dark-success: #059669;
 
   /* ─── Status Colors ─────────────────────── */
   --success: #10b981;
@@ -33,6 +44,16 @@
   --danger-bg: #fef2f2;
   --info: #3b82f6;
   --info-bg: #eff6ff;
+
+  /* ─── Payment Badge Colors ──────────────── */
+  --badge-cash-bg: #ecfdf5;
+  --badge-cash-text: #059669;
+  --badge-card-bg: #eff6ff;
+  --badge-card-text: #2563eb;
+  --badge-upi-bg: #f5f3ff;
+  --badge-upi-text: #7c3aed;
+  --badge-company-bg: #fffbeb;
+  --badge-company-text: #b45309;
 
   /* ─── Borders & Shadows ─────────────────── */
   --border: #e2e8f0;
@@ -136,19 +157,31 @@ input, select, textarea {
   background: var(--success);
   color: white;
 }
-.btn-success:hover { opacity: 0.9; }
+.btn-success:hover {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
 
 .btn-danger {
   background: var(--danger);
   color: white;
 }
-.btn-danger:hover { opacity: 0.9; }
+.btn-danger:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
 
 .btn-warning {
   background: var(--warning);
-  color: #1e293b;
+  color: var(--text-primary);
 }
-.btn-warning:hover { opacity: 0.9; }
+.btn-warning:hover {
+  background: #d97706;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
 
 .btn-secondary {
   background: var(--bg-hover);
@@ -166,6 +199,22 @@ input, select, textarea {
 }
 .btn-outline:hover {
   background: var(--accent-bg);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-sm {
@@ -193,8 +242,12 @@ input, select, textarea {
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-  background: #fff;
+  box-shadow: var(--focus-ring);
+  background: var(--bg-card);
+}
+
+.input:focus-visible {
+  outline: none;
 }
 
 .input::placeholder {
@@ -228,15 +281,21 @@ input, select, textarea {
 
 .badge-placed { background: var(--info-bg); color: var(--info); }
 .badge-confirmed { background: var(--accent-bg); color: var(--accent); }
-.badge-preparing { background: var(--warning-bg); color: #b45309; }
-.badge-ready { background: var(--success-bg); color: #059669; }
-.badge-served { background: #f1f5f9; color: #475569; }
-.badge-completed { background: var(--success-bg); color: #059669; }
+.badge-preparing { background: var(--warning-bg); color: var(--text-dark-warning); }
+.badge-ready { background: var(--success-bg); color: var(--text-dark-success); }
+.badge-served { background: var(--bg-body); color: var(--text-secondary); }
+.badge-completed { background: var(--success-bg); color: var(--text-dark-success); }
 .badge-cancelled { background: var(--danger-bg); color: var(--danger); }
-.badge-success { background: var(--success-bg); color: #059669; }
-.badge-warning { background: var(--warning-bg); color: #b45309; }
+.badge-success { background: var(--success-bg); color: var(--text-dark-success); }
+.badge-warning { background: var(--warning-bg); color: var(--text-dark-warning); }
 .badge-info { background: var(--info-bg); color: var(--info); }
 .badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+/* Payment Method Badges */
+.badge-cash { background: var(--badge-cash-bg); color: var(--badge-cash-text); }
+.badge-card { background: var(--badge-card-bg); color: var(--badge-card-text); }
+.badge-upi { background: var(--badge-upi-bg); color: var(--badge-upi-text); }
+.badge-company { background: var(--badge-company-bg); color: var(--badge-company-text); }
 
 /* ═══ Grids & Layout Helpers ══════════════════════ */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
@@ -466,13 +525,115 @@ input, select, textarea {
   font-size: 13.5px;
 }
 
+/* ═══ Loading State ════════════════════════════════ */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-container p {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ═══ Search Box ══════════════════════════════════ */
+.search-box {
+  position: relative;
+}
+
+.search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.search-box .input {
+  padding-left: 36px;
+}
+
 /* ═══ Responsive ══════════════════════════════════ */
+@media (max-width: 1200px) {
+  .grid-4 { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 {
     grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .modal {
+    width: 95%;
+    padding: 20px;
+    max-height: 90vh;
+  }
+
+  .stat-card .stat-value {
+    font-size: 22px;
+  }
+
+  .data-table th, .table th,
+  .data-table td, .table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .btn {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 16px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 20px;
+  }
+
+  .empty-state {
+    padding: 40px 16px;
   }
 }

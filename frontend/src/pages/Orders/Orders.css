@@ -211,3 +211,27 @@
 .menu-item-btn {
   position: relative;
 }
+
+/* ─── Responsive ──────────────────────────── */
+@media (max-width: 768px) {
+  .new-order-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    max-height: 300px;
+  }
+
+  .cart-items {
+    max-height: 200px;
+  }
+
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .new-order-modal {
+    padding: 16px;
+  }
+}

@@ -148,3 +148,24 @@
   padding-top: 12px;
   font-size: 15px;
 }
+
+/* ─── Responsive ──────────────────────────── */
+@media (max-width: 1024px) {
+  .billing-layout {
+    grid-template-columns: 300px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .billing-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .billing-orders-list {
+    max-height: 300px;
+  }
+  
+  .denomination-row {
+    grid-template-columns: 60px 20px 70px 1fr;
+  }
+}

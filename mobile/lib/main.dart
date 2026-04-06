@@ -33,7 +33,7 @@ class POSWaiterApp extends StatelessWidget {
           return MaterialApp(
             title: 'POS Waiter',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.darkTheme,
+            theme: AppTheme.lightTheme,
             home: auth.loading
                 ? const Scaffold(
                     body: Center(child: CircularProgressIndicator()),

@@ -3,3 +3,11 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+
+@media (max-width: 768px) {
+  .report-tabs .btn {
+    flex: 1;
+    min-width: 100px;
+    justify-content: center;
+  }
+}

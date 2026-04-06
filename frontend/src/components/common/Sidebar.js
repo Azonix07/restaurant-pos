@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fi';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
   const [expandedGroups, setExpandedGroups] = useState({ operations: true });
@@ -131,7 +131,7 @@ const Sidebar = () => {
   );
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-brand">
           <span className="brand-icon">🍽️</span>

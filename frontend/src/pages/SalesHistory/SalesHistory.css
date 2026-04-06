@@ -34,7 +34,17 @@
   gap: 12px;
   padding: 16px;
 }
-.sales-history-page .badge-cash { background: #065f46; color: #ecfdf5; }
-.sales-history-page .badge-card { background: #1e40af; color: #dbeafe; }
-.sales-history-page .badge-upi { background: #7c3aed; color: #ede9fe; }
-.sales-history-page .badge-company { background: #92400e; color: #fef3c7; }
+.sales-history-page .badge-cash { background: var(--badge-cash-bg); color: var(--badge-cash-text); }
+.sales-history-page .badge-card { background: var(--badge-card-bg); color: var(--badge-card-text); }
+.sales-history-page .badge-upi { background: var(--badge-upi-bg); color: var(--badge-upi-text); }
+.sales-history-page .badge-company { background: var(--badge-company-bg); color: var(--badge-company-text); }
+
+@media (max-width: 768px) {
+  .sales-history-page .sh-filters {
+    flex-direction: column;
+  }
+  .sales-history-page .sh-filters .input {
+    width: 100%;
+    min-width: unset;
+  }
+}

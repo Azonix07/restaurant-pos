@@ -132,3 +132,10 @@
   object-fit: cover;
   flex-shrink: 0;
 }
+
+/* ─── Responsive ──────────────────────────── */
+@media (max-width: 768px) {
+  .kitchen-grid {
+    grid-template-columns: 1fr;
+  }
+}

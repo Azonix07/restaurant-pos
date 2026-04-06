@@ -1,1 +1,19 @@
-/* Settings page uses shared styles */
+/* Settings page styles */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal sizing overrides */
+.settings-permissions-modal {
+  max-width: 550px;
+}
+
+@media (max-width: 768px) {
+  .settings-page .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

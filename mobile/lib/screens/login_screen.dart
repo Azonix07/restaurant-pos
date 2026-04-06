@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
 import '../services/network_service.dart';
+import '../theme.dart';
 import 'connection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,17 +15,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _serverController = TextEditingController();
   bool _loading = false;
-  bool _showServerConfig = false;
+  bool _obscurePassword = true;
   String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _serverController.text =
-        ApiService.baseUrl.replaceFirst('/api', '');
-  }
 
   Future<void> _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -40,199 +32,163 @@ class _LoginScreenState extends State<LoginScreen> {
       await context
           .read<AuthProvider>()
           .login(_emailController.text.trim(), _passwordController.text);
-      // Check if we logged in offline
       if (mounted) {
         final auth = context.read<AuthProvider>();
         if (auth.offlineMode) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Logged in offline with cached credentials'),
-              backgroundColor: Color(0xFFF59E0B),
+            SnackBar(
+              content: const Text('Signed in with cached credentials'),
+              backgroundColor: AppTheme.warning,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
       }
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _testConnection() async {
-    setState(() => _loading = true);
-    final url = _serverController.text.trim();
-    final ok = await ApiService.testConnection(url);
-    if (ok) {
-      await ApiService.setServerUrl(url);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connected successfully!'),
-              backgroundColor: Color(0xFF22C55E)),
-        );
-        setState(() => _showServerConfig = false);
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection failed. Check IP and port.'),
-              backgroundColor: Color(0xFFEF4444)),
-        );
-      }
-    }
-    if (mounted) setState(() => _loading = false);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('🍽️', style: TextStyle(fontSize: 56)),
-                const SizedBox(height: 12),
-                Text('POS Waiter',
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 4),
-                Text('Sign in to start taking orders',
-                    style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 40),
+                // Brand
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.accent, AppTheme.accentLight],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.accent.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text('🍽️', style: TextStyle(fontSize: 36)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text('Welcome back',
+                    style: TextStyle(
+                        fontSize: 26, fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary, letterSpacing: -0.5)),
+                const SizedBox(height: 6),
+                const Text('Sign in to start taking orders',
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
 
-                // Connection status + config
+                const SizedBox(height: 36),
+
+                // Connection indicator
                 Consumer<NetworkService>(
                   builder: (ctx, net, _) {
-                    return Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const ConnectionScreen())),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: net.isConnected
-                                  ? const Color(0xFF22C55E).withValues(alpha: 0.1)
-                                  : const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: net.isConnected
-                                    ? const Color(0xFF22C55E).withValues(alpha: 0.3)
-                                    : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                    return GestureDetector(
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ConnectionScreen())),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: net.isConnected ? AppTheme.successBg : AppTheme.warningBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              net.isConnected
+                                  ? (net.isLanMode ? Icons.wifi : Icons.cloud_done_outlined)
+                                  : Icons.wifi_off_outlined,
+                              size: 16,
+                              color: net.isConnected ? AppTheme.success : AppTheme.warning,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              net.isConnected
+                                  ? (net.isLanMode ? 'LAN Connected' : 'Online')
+                                  : 'Not Connected',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: net.isConnected ? AppTheme.success : AppTheme.warning,
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  net.isConnected
-                                      ? (net.isLanMode ? Icons.wifi : Icons.cloud_done)
-                                      : Icons.signal_wifi_off,
-                                  size: 16,
-                                  color: net.isConnected
-                                      ? const Color(0xFF22C55E)
-                                      : const Color(0xFFF59E0B),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  net.isConnected
-                                      ? (net.isLanMode ? 'LAN Connected' : 'Online')
-                                      : 'Not Connected – Tap to setup',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: net.isConnected
-                                        ? const Color(0xFF22C55E)
-                                        : const Color(0xFFF59E0B),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Icon(Icons.arrow_forward_ios, size: 10,
-                                    color: net.isConnected
-                                        ? const Color(0xFF22C55E)
-                                        : const Color(0xFFF59E0B)),
-                              ],
-                            ),
-                          ),
+                            const SizedBox(width: 6),
+                            Icon(Icons.chevron_right, size: 16,
+                                color: net.isConnected ? AppTheme.success : AppTheme.warning),
+                          ],
                         ),
-                      ],
+                      ),
                     );
                   },
                 ),
 
-                // Server config toggle (legacy manual entry)
-                TextButton.icon(
-                  onPressed: () =>
-                      setState(() => _showServerConfig = !_showServerConfig),
-                  icon: const Icon(Icons.settings, size: 16),
-                  label: Text(_showServerConfig
-                      ? 'Hide Manual Config'
-                      : 'Manual Server Config'),
-                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF6B7280)),
-                ),
+                const SizedBox(height: 28),
 
-                if (_showServerConfig) ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _serverController,
-                    decoration: const InputDecoration(
-                      labelText: 'Server URL',
-                      hintText: 'http://192.168.1.100:5001',
-                      prefixIcon: Icon(Icons.dns),
-                    ),
-                    keyboardType: TextInputType.url,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _loading ? null : _testConnection,
-                      child: const Text('Test Connection'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                const SizedBox(height: 8),
+                // Email field
                 TextField(
                   controller: _emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                    prefixIcon: Icon(Icons.email_outlined, size: 20),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
+
+                // Password field
                 TextField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline),
+                    prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        size: 20, color: AppTheme.textMuted,
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _login(),
                 ),
 
+                // Error message
                 if (_error != null) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppTheme.dangerBg,
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline,
-                            color: Color(0xFFEF4444), size: 18),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(_error!,
-                              style: const TextStyle(
-                                  color: Color(0xFFEF4444), fontSize: 13)),
+                              style: const TextStyle(color: AppTheme.danger, fontSize: 13, fontWeight: FontWeight.w500)),
                         ),
                       ],
                     ),
@@ -240,17 +196,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
 
                 const SizedBox(height: 24),
+
+                // Sign in button
                 SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: _loading ? null : _login,
                     child: _loading
                         ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Sign In'),
+                            height: 20, width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -265,7 +222,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _serverController.dispose();
     super.dispose();
   }
 }

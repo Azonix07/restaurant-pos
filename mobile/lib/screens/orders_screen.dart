@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/order_provider.dart';
+import '../theme.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -16,18 +17,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OrderProvider>().fetchActiveOrders();
     });
-  }
-
-  Color _statusColor(String s) {
-    switch (s) {
-      case 'confirmed': return const Color(0xFF3B82F6);
-      case 'preparing': return const Color(0xFFF59E0B);
-      case 'ready': return const Color(0xFF22C55E);
-      case 'served': return const Color(0xFF8B5CF6);
-      case 'completed': return const Color(0xFF6B7280);
-      case 'cancelled': return const Color(0xFFEF4444);
-      default: return const Color(0xFF9CA3AF);
-    }
   }
 
   @override
@@ -47,13 +36,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
       body: orderProv.loadingOrders
           ? const Center(child: CircularProgressIndicator())
           : orderProv.activeOrders.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.receipt_long_outlined, size: 64, color: Color(0xFF6B7280)),
-                      SizedBox(height: 12),
-                      Text('No active orders', style: TextStyle(color: Color(0xFF9CA3AF))),
+                      Icon(Icons.receipt_long_outlined, size: 56, color: AppTheme.textMuted.withValues(alpha: 0.4)),
+                      const SizedBox(height: 12),
+                      const Text('No active orders', style: TextStyle(color: AppTheme.textMuted, fontSize: 15)),
                     ],
                   ),
                 )
@@ -74,11 +63,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       final createdAt = order['createdAt'] != null
                           ? DateFormat('h:mm a').format(DateTime.parse(order['createdAt']).toLocal())
                           : '';
+                      final sc = AppTheme.statusColor(status);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           onTap: () => _showOrderDetails(order),
                           child: Padding(
                             padding: const EdgeInsets.all(14),
@@ -88,49 +78,36 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 Row(
                                   children: [
                                     Text('#$orderNum',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w700, fontSize: 16)),
+                                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                                     const SizedBox(width: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        color: _statusColor(status).withValues(alpha: 0.15),
+                                        color: sc.withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         status.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: _statusColor(status),
-                                        ),
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sc),
                                       ),
                                     ),
                                     const Spacer(),
-                                    Text(createdAt,
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Color(0xFF9CA3AF))),
+                                    Text(createdAt, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                                   ],
                                 ),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
                                     if (tableNum.isNotEmpty) ...[
-                                      const Icon(Icons.table_restaurant,
-                                          size: 14, color: Color(0xFF9CA3AF)),
+                                      const Icon(Icons.table_restaurant, size: 14, color: AppTheme.textMuted),
                                       const SizedBox(width: 4),
-                                      Text('Table $tableNum',
-                                          style: const TextStyle(
-                                              fontSize: 13, color: Color(0xFF9CA3AF))),
+                                      Text('Table $tableNum', style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
                                       const SizedBox(width: 12),
                                     ],
-                                    Text(type,
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Color(0xFF6366F1))),
+                                    Text(type, style: const TextStyle(fontSize: 12, color: AppTheme.accent)),
                                     const Spacer(),
                                     Text('₹${total.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w700, fontSize: 15)),
+                                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                                   ],
                                 ),
                                 const Divider(height: 16),
@@ -138,14 +115,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                       padding: const EdgeInsets.only(bottom: 2),
                                       child: Text(
                                         '${item['quantity']}x ${item['name'] ?? item['menuItem']?['name'] ?? ''}',
-                                        style: const TextStyle(
-                                            fontSize: 13, color: Color(0xFFD1D5DB)),
+                                        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                                       ),
                                     )),
                                 if (items.length > 3)
                                   Text('+${items.length - 3} more items',
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Color(0xFF6B7280))),
+                                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                               ],
                             ),
                           ),
@@ -179,18 +154,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 child: Container(
                   width: 40, height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6B7280),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
-              Text('Order #$orderNum',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              Text('Order #$orderNum', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
-              const Text('ITEMS',
-                  style: TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF))),
+              Text('ITEMS', style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 8),
               ...items.map((item) {
                 final name = item['name'] ?? item['menuItem']?['name'] ?? '';
@@ -198,6 +167,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 final price = (item['price'] as num?)?.toDouble() ??
                     (item['menuItem']?['price'] as num?)?.toDouble() ?? 0;
                 final itemStatus = item['status']?.toString() ?? '';
+                final isc = AppTheme.statusColor(itemStatus);
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
@@ -209,11 +179,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: _statusColor(itemStatus).withValues(alpha: 0.15),
+                            color: isc.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(itemStatus,
-                              style: TextStyle(fontSize: 10, color: _statusColor(itemStatus))),
+                          child: Text(itemStatus, style: TextStyle(fontSize: 10, color: isc)),
                         ),
                         const SizedBox(width: 8),
                       ],
@@ -226,11 +195,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  const Text('Total', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   Text(
                     '₹${((order['total'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppTheme.accent),
                   ),
                 ],
               ),
@@ -245,16 +213,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           label: const Text('Mark Served'),
                           onPressed: () async {
                             try {
-                              await context
-                                  .read<OrderProvider>()
-                                  .updateOrderStatus(order['_id'], 'served');
+                              await context.read<OrderProvider>().updateOrderStatus(order['_id'], 'served');
                             } catch (_) {
                               if (ctx.mounted) {
                                 ScaffoldMessenger.of(ctx).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Queued offline — will sync when connected'),
-                                    backgroundColor: Color(0xFFF59E0B),
-                                  ),
+                                  const SnackBar(content: Text('Queued offline — will sync when connected'), backgroundColor: AppTheme.warning),
                                 );
                               }
                             }
@@ -265,21 +228,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     if (status != 'ready') ...[
                       Expanded(
                         child: OutlinedButton.icon(
-                          icon: const Icon(Icons.cancel_outlined, color: Color(0xFFEF4444)),
-                          label: const Text('Cancel',
-                              style: TextStyle(color: Color(0xFFEF4444))),
+                          icon: const Icon(Icons.cancel_outlined, color: AppTheme.danger),
+                          label: const Text('Cancel', style: TextStyle(color: AppTheme.danger)),
                           onPressed: () async {
                             try {
-                              await context
-                                  .read<OrderProvider>()
-                                  .updateOrderStatus(order['_id'], 'cancelled');
+                              await context.read<OrderProvider>().updateOrderStatus(order['_id'], 'cancelled');
                             } catch (_) {
                               if (ctx.mounted) {
                                 ScaffoldMessenger.of(ctx).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Queued offline — will sync when connected'),
-                                    backgroundColor: Color(0xFFF59E0B),
-                                  ),
+                                  const SnackBar(content: Text('Queued offline — will sync when connected'), backgroundColor: AppTheme.warning),
                                 );
                               }
                             }

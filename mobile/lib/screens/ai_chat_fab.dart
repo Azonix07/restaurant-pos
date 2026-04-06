@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/claude_service.dart';
+import '../theme.dart';
 
 class AIChatFab extends StatefulWidget {
   const AIChatFab({super.key});
@@ -45,15 +46,11 @@ class _AIChatFabState extends State<AIChatFab> with SingleTickerProviderStateMix
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: AppTheme.accent,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4F46E5).withValues(alpha: 0.3 + _pulseController.value * 0.15),
+                    color: AppTheme.accent.withValues(alpha: 0.25 + _pulseController.value * 0.15),
                     blurRadius: 12 + _pulseController.value * 8,
                     offset: const Offset(0, 4),
                   ),
@@ -161,7 +158,7 @@ class _AIChatModalState extends State<_AIChatModal> {
           children: [
             const Text(
               'Enter your Anthropic API key. Stored locally on this device only.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+              style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -187,7 +184,7 @@ class _AIChatModalState extends State<_AIChatModal> {
                 setState(() => _hasKey = false);
                 if (ctx.mounted) Navigator.pop(ctx);
               },
-              child: const Text('Remove', style: TextStyle(color: Color(0xFFEF4444))),
+              child: const Text('Remove', style: TextStyle(color: AppTheme.danger)),
             ),
           ElevatedButton(
             onPressed: () async {
@@ -212,7 +209,7 @@ class _AIChatModalState extends State<_AIChatModal> {
     return Container(
       height: screenHeight * 0.85,
       decoration: const BoxDecoration(
-        color: Color(0xFF0F0F17),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -232,11 +229,7 @@ class _AIChatModalState extends State<_AIChatModal> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: AppTheme.accent,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Row(
@@ -302,26 +295,26 @@ class _AIChatModalState extends State<_AIChatModal> {
       margin: const EdgeInsets.only(left: 12, right: 12, top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+        color: AppTheme.warningBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 16),
+          const Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 16),
           const SizedBox(width: 8),
           const Expanded(
-            child: Text('API key required', style: TextStyle(fontSize: 12, color: Color(0xFFF59E0B))),
+            child: Text('API key required', style: TextStyle(fontSize: 12, color: AppTheme.warning)),
           ),
           GestureDetector(
             onTap: _showApiKeyDialog,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B),
+                color: AppTheme.warning,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text('Add Key', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black)),
+              child: const Text('Add Key', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
           ),
         ],
@@ -338,21 +331,18 @@ class _AIChatModalState extends State<_AIChatModal> {
           Container(
             width: 56, height: 56,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF6366F1)]),
+              color: AppTheme.accentBg,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFF4F46E5).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
             ),
-            child: const Icon(Icons.auto_awesome, size: 28, color: Colors.white),
+            child: const Icon(Icons.auto_awesome, size: 28, color: AppTheme.accent),
           ),
           const SizedBox(height: 16),
-          const Text('How can I help?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFFE5E7EB))),
+          const Text('How can I help?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           const Text(
             'Ask about sales, orders, staff, or anything about your restaurant.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+            style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
           ),
           const SizedBox(height: 20),
           ..._suggestions.map((s) => Padding(
@@ -363,11 +353,11 @@ class _AIChatModalState extends State<_AIChatModal> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2E),
+                  color: AppTheme.surfaceAlt,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF2D2D3D)),
+                  border: Border.all(color: AppTheme.border),
                 ),
-                child: Text(s, style: const TextStyle(fontSize: 13, color: Color(0xFFD1D5DB))),
+                child: Text(s, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
               ),
             ),
           )),
@@ -401,10 +391,10 @@ class _AIChatModalState extends State<_AIChatModal> {
             Container(
               width: 28, height: 28,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF6366F1)]),
+                color: AppTheme.accentBg,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+              child: const Icon(Icons.auto_awesome, size: 14, color: AppTheme.accent),
             ),
             const SizedBox(width: 8),
           ],
@@ -412,24 +402,21 @@ class _AIChatModalState extends State<_AIChatModal> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isUser ? const Color(0xFF4F46E5) : const Color(0xFF1E1E2E),
+                color: isUser ? AppTheme.accent : AppTheme.surfaceAlt,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(14),
                   topRight: const Radius.circular(14),
                   bottomLeft: Radius.circular(isUser ? 14 : 4),
                   bottomRight: Radius.circular(isUser ? 4 : 14),
                 ),
-                border: isUser ? null : Border.all(color: const Color(0xFF2D2D3D)),
-                boxShadow: isUser ? [
-                  BoxShadow(color: const Color(0xFF4F46E5).withValues(alpha: 0.2), blurRadius: 6, offset: const Offset(0, 2)),
-                ] : null,
+                border: isUser ? null : Border.all(color: AppTheme.border),
               ),
               child: SelectableText(
                 content,
                 style: TextStyle(
                   fontSize: 13.5,
                   height: 1.5,
-                  color: isUser ? Colors.white : const Color(0xFFE5E7EB),
+                  color: isUser ? Colors.white : AppTheme.textPrimary,
                 ),
               ),
             ),
@@ -439,10 +426,11 @@ class _AIChatModalState extends State<_AIChatModal> {
             Container(
               width: 28, height: 28,
               decoration: BoxDecoration(
-                color: const Color(0xFF252536),
+                color: AppTheme.surfaceAlt,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.border),
               ),
-              child: const Icon(Icons.person, size: 14, color: Color(0xFF9CA3AF)),
+              child: const Icon(Icons.person, size: 14, color: AppTheme.textMuted),
             ),
           ],
         ],
@@ -458,25 +446,25 @@ class _AIChatModalState extends State<_AIChatModal> {
           Container(
             width: 28, height: 28,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF6366F1)]),
+              color: AppTheme.accentBg,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+            child: const Icon(Icons.auto_awesome, size: 14, color: AppTheme.accent),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E2E),
+              color: AppTheme.surfaceAlt,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF2D2D3D)),
+              border: Border.all(color: AppTheme.border),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1))),
+                SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent)),
                 SizedBox(width: 8),
-                Text('Analyzing...', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+                Text('Analyzing...', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
               ],
             ),
           ),
@@ -489,8 +477,8 @@ class _AIChatModalState extends State<_AIChatModal> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E1E2E),
-        border: Border(top: BorderSide(color: Color(0xFF2D2D3D))),
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.border)),
       ),
       child: SafeArea(
         top: false,
@@ -499,8 +487,9 @@ class _AIChatModalState extends State<_AIChatModal> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F0F17),
+                  color: AppTheme.surfaceAlt,
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.border),
                 ),
                 child: TextField(
                   controller: _controller,
@@ -511,9 +500,12 @@ class _AIChatModalState extends State<_AIChatModal> {
                   onSubmitted: _isLoading ? null : _sendMessage,
                   decoration: const InputDecoration(
                     hintText: 'Ask anything...',
-                    hintStyle: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+                    hintStyle: TextStyle(color: AppTheme.textMuted, fontSize: 14),
                     contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                   ),
                 ),
               ),
@@ -524,15 +516,12 @@ class _AIChatModalState extends State<_AIChatModal> {
               child: Container(
                 width: 42, height: 42,
                 decoration: BoxDecoration(
-                  gradient: _isLoading
-                      ? null
-                      : const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF6366F1)]),
-                  color: _isLoading ? const Color(0xFF252536) : null,
+                  color: _isLoading ? AppTheme.surfaceAlt : AppTheme.accent,
                   borderRadius: BorderRadius.circular(21),
                 ),
                 child: Icon(
                   _isLoading ? Icons.hourglass_top : Icons.send_rounded,
-                  color: _isLoading ? const Color(0xFF6B7280) : Colors.white,
+                  color: _isLoading ? AppTheme.textMuted : Colors.white,
                   size: 18,
                 ),
               ),

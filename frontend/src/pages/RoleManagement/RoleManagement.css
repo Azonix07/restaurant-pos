@@ -18,9 +18,9 @@
 .perm-tag.partial { background: #fef3c7; color: #d97706; }
 .role-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
-.btn-primary { background: var(--color-primary, #6c5ce7); color: #fff; border: none; padding: 0.625rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; }
-.btn-primary:hover { opacity: 0.9; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.role-management .btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.625rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; }
+.role-management .btn-primary:hover { background: var(--accent-light); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+.role-management .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary { background: var(--color-surface, #f3f4f6); color: var(--color-text, #374151); border: 1px solid var(--color-border, #d1d5db); padding: 0.625rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.875rem; }
 .btn-icon { background: none; border: 1px solid var(--color-border, #e5e7eb); padding: 0.5rem; border-radius: 8px; cursor: pointer; color: var(--color-text-secondary, #666); transition: all 0.15s; }
 .btn-icon:hover { background: var(--color-surface, #f3f4f6); color: var(--color-primary, #6c5ce7); }
@@ -39,7 +39,7 @@
 .form-group { margin-bottom: 0.75rem; }
 .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary, #666); margin-bottom: 0.25rem; }
 .form-group input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border, #d1d5db); border-radius: 8px; font-size: 0.875rem; outline: none; box-sizing: border-box; }
-.form-group input:focus { border-color: var(--color-primary, #6c5ce7); box-shadow: 0 0 0 3px rgba(108,92,231,0.1); }
+.form-group input:focus { border-color: var(--color-primary, #4f46e5); box-shadow: var(--focus-ring); }
 
 /* Permissions grid */
 .perm-title { font-size: 0.95rem; font-weight: 700; margin: 1rem 0 0.75rem; color: var(--color-text, #1a1a2e); }

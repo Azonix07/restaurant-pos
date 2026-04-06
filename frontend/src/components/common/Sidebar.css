@@ -219,3 +219,34 @@
   color: white;
   border-color: var(--danger);
 }
+
+/* ─── Focus States ────────────────────────── */
+.sidebar-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-bg), 0 0 0 4px var(--accent);
+}
+
+.sidebar-group-header:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-bg), 0 0 0 4px var(--accent);
+}
+
+.sidebar-logout-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--danger-bg), 0 0 0 4px var(--danger);
+}
+
+/* ─── Mobile Responsive ──────────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+    transform: translateX(-100%);
+    box-shadow: none;
+    z-index: 200;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
+  }
+}

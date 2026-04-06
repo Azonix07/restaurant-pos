@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/network_service.dart';
 import '../services/api_service.dart';
+import '../theme.dart';
 
 class ConnectionScreen extends StatefulWidget {
   const ConnectionScreen({super.key});
@@ -42,7 +43,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${isLan ? 'LAN' : 'Online'} server connected!'),
-            backgroundColor: const Color(0xFF22C55E),
+            backgroundColor: AppTheme.success,
           ),
         );
       }
@@ -51,7 +52,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Cannot reach ${isLan ? 'LAN' : 'Online'} server'),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: AppTheme.danger,
           ),
         );
       }
@@ -71,21 +72,14 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // Connection status card
           _buildStatusCard(net),
-
           const SizedBox(height: 20),
-
-          // Connection mode
           _buildModeSelector(net),
-
           const SizedBox(height: 20),
-
-          // LAN Server
           _buildServerCard(
             label: 'LAN SERVER (WiFi)',
             icon: Icons.wifi,
-            iconColor: const Color(0xFF22C55E),
+            iconColor: AppTheme.success,
             hint: 'http://192.168.1.100:5001',
             controller: _lanController,
             isTesting: _testingLan,
@@ -93,24 +87,18 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             onTest: () => _testAndSave(_lanController.text.trim(), true),
             onScan: () => _showScanDialog(net),
           ),
-
           const SizedBox(height: 16),
-
-          // Online Server
           _buildServerCard(
             label: 'ONLINE SERVER (Cloud)',
             icon: Icons.cloud,
-            iconColor: const Color(0xFF6366F1),
+            iconColor: AppTheme.accent,
             hint: 'https://your-server.com:5001',
             controller: _onlineController,
             isTesting: _testingOnline,
             isActive: net.activeConnection == ConnectionType.online,
             onTest: () => _testAndSave(_onlineController.text.trim(), false),
           ),
-
           const SizedBox(height: 20),
-
-          // Device info
           _buildDeviceCard(net),
         ],
       ),
@@ -125,22 +113,22 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     if (net.isConnected) {
       switch (net.activeConnection) {
         case ConnectionType.lan:
-          statusColor = const Color(0xFF22C55E);
+          statusColor = AppTheme.success;
           statusText = 'Connected via LAN WiFi';
           statusIcon = Icons.wifi;
           break;
         case ConnectionType.online:
-          statusColor = const Color(0xFF6366F1);
+          statusColor = AppTheme.accent;
           statusText = 'Connected Online';
           statusIcon = Icons.cloud_done;
           break;
         default:
-          statusColor = const Color(0xFFF59E0B);
+          statusColor = AppTheme.warning;
           statusText = 'Disconnected';
           statusIcon = Icons.cloud_off;
       }
     } else {
-      statusColor = const Color(0xFFEF4444);
+      statusColor = AppTheme.danger;
       statusText = 'Not Connected';
       statusIcon = Icons.signal_wifi_off;
     }
@@ -149,17 +137,17 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [statusColor.withValues(alpha: 0.15), statusColor.withValues(alpha: 0.05)],
+          colors: [statusColor.withValues(alpha: 0.1), statusColor.withValues(alpha: 0.03)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
           Container(
             width: 50, height: 50,
             decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.2),
+              color: statusColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(statusIcon, color: statusColor, size: 26),
@@ -173,7 +161,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                 const SizedBox(height: 4),
                 Text(
                   net.isConnected ? ApiService.baseUrl : 'Configure a server below',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                 ),
               ],
             ),
@@ -183,7 +171,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: statusColor,
-              boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.5), blurRadius: 8)],
+              boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.4), blurRadius: 8)],
             ),
           ),
         ],
@@ -198,8 +186,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('CONNECTION MODE',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF))),
+            Text('CONNECTION MODE', style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -217,7 +204,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                   : net.connectionMode == 'lan'
                       ? 'Forces LAN connection only (WiFi required)'
                       : 'Forces online/cloud connection only',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
         ),
@@ -233,20 +220,20 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF6366F1).withValues(alpha: 0.15) : Colors.transparent,
+            color: isActive ? AppTheme.accentBg : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isActive ? const Color(0xFF6366F1) : const Color(0xFF2D2D3D),
+              color: isActive ? AppTheme.accent : AppTheme.border,
             ),
           ),
           child: Column(
             children: [
-              Icon(icon, size: 18, color: isActive ? const Color(0xFF6366F1) : const Color(0xFF9CA3AF)),
+              Icon(icon, size: 18, color: isActive ? AppTheme.accent : AppTheme.textMuted),
               const SizedBox(height: 4),
               Text(label, style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: isActive ? const Color(0xFF6366F1) : const Color(0xFF9CA3AF),
+                color: isActive ? AppTheme.accent : AppTheme.textMuted,
               )),
             ],
           ),
@@ -276,16 +263,16 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
               children: [
                 Icon(icon, size: 16, color: iconColor),
                 const SizedBox(width: 8),
-                Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF))),
+                Text(label, style: Theme.of(context).textTheme.labelSmall),
                 const Spacer(),
                 if (isActive)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E).withValues(alpha: 0.15),
+                      color: AppTheme.successBg,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text('ACTIVE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF22C55E))),
+                    child: const Text('ACTIVE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.success)),
                   ),
               ],
             ),
@@ -334,12 +321,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('DEVICE INFO',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF))),
+            Text('DEVICE INFO', style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.phone_android, size: 16, color: Color(0xFF9CA3AF)),
+                const Icon(Icons.phone_android, size: 16, color: AppTheme.textMuted),
                 const SizedBox(width: 10),
                 Expanded(child: Text(net.deviceId ?? 'Unknown', style: const TextStyle(fontSize: 12, fontFamily: 'monospace'))),
               ],
@@ -347,9 +333,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.badge, size: 16, color: Color(0xFF9CA3AF)),
+                const Icon(Icons.badge, size: 16, color: AppTheme.textMuted),
                 const SizedBox(width: 10),
-                const Text('Type: waiter_app', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+                const Text('Type: waiter_app', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
               ],
             ),
             if (net.isConnected) ...[
@@ -364,7 +350,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(ok ? 'Device registered!' : 'Registration failed'),
-                        backgroundColor: ok ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                        backgroundColor: ok ? AppTheme.success : AppTheme.danger,
                       ));
                     }
                   },
@@ -426,7 +412,7 @@ class _ScanDialogState extends State<_ScanDialog> {
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text('Searching for POS servers on your WiFi network...',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                    style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
               ],
             );
           }
@@ -436,10 +422,10 @@ class _ScanDialogState extends State<_ScanDialog> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.search_off, size: 48, color: Color(0xFF6B7280)),
+                Icon(Icons.search_off, size: 48, color: AppTheme.textMuted.withValues(alpha: 0.5)),
                 const SizedBox(height: 12),
                 Text(widget.net.lastError ?? 'No servers found',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                    style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
               ],
             );
           }
@@ -450,7 +436,7 @@ class _ScanDialogState extends State<_ScanDialog> {
               Text('Found ${servers.length} server(s):', style: const TextStyle(fontSize: 13)),
               const SizedBox(height: 12),
               ...servers.map((url) => ListTile(
-                leading: const Icon(Icons.dns, color: Color(0xFF22C55E)),
+                leading: const Icon(Icons.dns, color: AppTheme.success),
                 title: Text(url, style: const TextStyle(fontSize: 13, fontFamily: 'monospace')),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                 onTap: () => widget.onSelect(url),

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
@@ -179,6 +179,7 @@ function App() {
             <Route path="/approvals" element={
               <ProtectedRoute roles={['admin', 'manager']}><Approvals /></ProtectedRoute>
             } />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </Router>
@@ -190,7 +191,7 @@ function App() {
         newestOnTop
         closeOnClick
         pauseOnHover
-        theme="dark"
+        theme="light"
       />
     </AuthProvider>
   );

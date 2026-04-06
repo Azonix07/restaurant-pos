@@ -80,3 +80,66 @@
 .layout.test-mode {
   border-top: 3px solid #a855f7;
 }
+
+/* Mobile menu button - hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--hover-bg);
+}
+
+/* Sidebar backdrop - mobile only */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+}
+
+/* ─── Tablet ──────────────────────────────── */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 0 20px 24px 20px;
+  }
+}
+
+/* ─── Mobile ──────────────────────────────── */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    max-width: 100vw;
+    padding: 0 16px 20px 16px;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  .topbar {
+    padding: 12px 0;
+    gap: 8px;
+  }
+}
