@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ConnectionStatus from './ConnectionStatus';
+import AIChatWidget from './AIChatWidget';
 import connectionManager from '../../utils/connectionManager';
 import { startAutoSync } from '../../utils/syncQueue';
 import { useSettings } from '../../context/SettingsContext';
@@ -32,6 +33,7 @@ const Layout = () => {
         </div>
         <Outlet />
       </main>
+      <AIChatWidget />
     </div>
   );
 };

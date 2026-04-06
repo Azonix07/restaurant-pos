@@ -16,7 +16,7 @@
   letter-spacing: 0.5px;
 }
 .backup-page .bk-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-hover);
 }
 .backup-page .bk-modal-overlay {
   position: fixed;
@@ -28,7 +28,7 @@
   z-index: 1000;
 }
 .backup-page .bk-modal {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;

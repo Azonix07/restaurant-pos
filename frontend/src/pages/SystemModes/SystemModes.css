@@ -7,8 +7,8 @@
 }
 
 .mode-card {
-  background: var(--card-bg, #1e1e2e);
-  border: 2px solid var(--border, #2d2d3d);
+  background: var(--bg-card);
+  border: 2px solid var(--border);
   border-radius: 14px;
   padding: 24px;
   transition: border-color 0.2s;
@@ -31,7 +31,7 @@
 
 .mode-card-header p {
   font-size: 13px;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -54,7 +54,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   padding: 4px;
   transition: color 0.2s;
 }
@@ -65,7 +65,7 @@
 .mode-features h4 {
   font-size: 12px;
   text-transform: uppercase;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
@@ -78,7 +78,7 @@
 .mode-features li {
   font-size: 13px;
   padding: 4px 0;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   position: relative;
   padding-left: 20px;
 }
@@ -102,9 +102,9 @@
   margin-top: 12px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-body);
   font-size: 12px;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
 }
 
 .test-controls { margin-top: 16px; }
@@ -130,7 +130,7 @@
   gap: 12px;
   padding: 14px;
   border-radius: 10px;
-  border: 2px solid var(--border, #2d2d3d);
+  border: 2px solid var(--border);
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -150,6 +150,6 @@
 .ui-mode-emoji { font-size: 24px; margin-top: 2px; }
 
 .ui-mode-btn strong { display: block; font-size: 14px; margin-bottom: 2px; }
-.ui-mode-btn p { font-size: 12px; color: var(--text-secondary, #9ca3af); margin: 0; }
+.ui-mode-btn p { font-size: 12px; color: var(--text-secondary); margin: 0; }
 
 .modal-sm { max-width: 360px; }

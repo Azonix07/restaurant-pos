@@ -37,7 +37,7 @@
   letter-spacing: 0.5px;
 }
 .staff-analysis-page .sa-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-hover);
 }
 .staff-analysis-page .sa-alert {
   border-radius: 8px;

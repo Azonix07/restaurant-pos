@@ -60,7 +60,7 @@
   z-index: 1000;
 }
 .company-credit-page .cc-modal {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;

@@ -7,7 +7,7 @@ import 'tables_screen.dart';
 import 'orders_screen.dart';
 import 'menu_screen.dart';
 import 'profile_screen.dart';
-import 'ai_chat_screen.dart';
+import 'ai_chat_fab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +23,6 @@ class _HomeScreenState extends State<HomeScreen> {
     TablesScreen(),
     MenuScreen(),
     OrdersScreen(),
-    AiChatScreen(),
     ProfileScreen(),
   ];
 
@@ -33,96 +32,102 @@ class _HomeScreenState extends State<HomeScreen> {
     final net = context.watch<NetworkService>();
 
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          // Network connection type indicator
-          if (net.isConnected && !sync.isSyncing && sync.isOnline)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: net.isLanMode
-                  ? const Color(0xFF22C55E).withValues(alpha: 0.08)
-                  : const Color(0xFF6366F1).withValues(alpha: 0.08),
-              child: SafeArea(
-                bottom: false,
-                child: Row(
-                  children: [
-                    Icon(
-                      net.isLanMode ? Icons.wifi : Icons.cloud_done,
-                      size: 14,
-                      color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      net.isLanMode ? 'LAN WiFi' : 'Online',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Offline / syncing banner
-          if (!sync.isOnline)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-              child: SafeArea(
-                bottom: false,
-                child: Row(
-                  children: [
-                    const Icon(Icons.cloud_off, size: 16, color: Color(0xFFF59E0B)),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Offline — changes will sync when connected',
-                        style: TextStyle(fontSize: 12, color: Color(0xFFF59E0B)),
-                      ),
-                    ),
-                    if (sync.pendingCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B),
-                          borderRadius: BorderRadius.circular(10),
+          Column(
+            children: [
+              // Network connection type indicator
+              if (net.isConnected && !sync.isSyncing && sync.isOnline)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  color: net.isLanMode
+                      ? const Color(0xFF22C55E).withValues(alpha: 0.08)
+                      : const Color(0xFF6366F1).withValues(alpha: 0.08),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Row(
+                      children: [
+                        Icon(
+                          net.isLanMode ? Icons.wifi : Icons.cloud_done,
+                          size: 14,
+                          color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
                         ),
-                        child: Text(
-                          '${sync.pendingCount} pending',
-                          style: const TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.w700),
+                        const SizedBox(width: 6),
+                        Text(
+                          net.isLanMode ? 'LAN WiFi' : 'Online',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            )
-          else if (sync.isSyncing)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-              child: SafeArea(
-                bottom: false,
-                child: const Row(
-                  children: [
-                    SizedBox(
-                      width: 14, height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+                      ],
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Syncing offline data...',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF6366F1)),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          // Main content
-          Expanded(child: _screens[_currentIndex]),
+              // Offline / syncing banner
+              if (!sync.isOnline)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cloud_off, size: 16, color: Color(0xFFF59E0B)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Offline — changes will sync when connected',
+                            style: TextStyle(fontSize: 12, color: Color(0xFFF59E0B)),
+                          ),
+                        ),
+                        if (sync.pendingCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${sync.pendingCount} pending',
+                              style: const TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (sync.isSyncing)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                  child: SafeArea(
+                    bottom: false,
+                    child: const Row(
+                      children: [
+                        SizedBox(
+                          width: 14, height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Syncing offline data...',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF6366F1)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              // Main content
+              Expanded(child: _screens[_currentIndex]),
+            ],
+          ),
+          // Floating AI Chat Button (admin/manager only)
+          const AIChatFab(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -133,7 +138,6 @@ class _HomeScreenState extends State<HomeScreen> {
           if (i == 2) {
             context.read<OrderProvider>().fetchActiveOrders();
           }
-          // Refresh not needed for AI tab, it handles its own state
         },
         items: const [
           BottomNavigationBarItem(
@@ -142,8 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.restaurant_menu), label: 'Menu'),
           BottomNavigationBarItem(
               icon: Icon(Icons.receipt_long), label: 'Orders'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.auto_awesome), label: 'AI'),
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline), label: 'Profile'),
         ],

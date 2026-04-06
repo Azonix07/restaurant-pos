@@ -10,12 +10,14 @@
   top: 0;
   z-index: 100;
   transition: width 0.3s ease;
+  box-shadow: 1px 0 8px rgba(0, 0, 0, 0.03);
 }
 
 /* ─── Header / Brand ──────────────────────── */
 .sidebar-header {
   padding: 20px 18px;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.03), transparent);
 }
 
 .sidebar-brand {

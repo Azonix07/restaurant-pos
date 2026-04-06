@@ -14,7 +14,7 @@
 
 .depreciation-bar-fill {
   height: 100%;
-  background: var(--primary, #4f46e5);
+  background: var(--accent);
   border-radius: 3px;
   transition: width 0.3s ease;
 }

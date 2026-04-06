@@ -1,7 +1,7 @@
 .held-orders-page { padding: 0; }
 
 .held-count {
-  background: var(--primary, #6366f1);
+  background: var(--accent);
   color: #fff;
   padding: 4px 12px;
   border-radius: 20px;
@@ -13,8 +13,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--card-bg, #1e1e2e);
-  border: 1px solid var(--border, #2d2d3d);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 20px;
@@ -36,20 +36,20 @@
 }
 
 .held-card {
-  background: var(--card-bg, #1e1e2e);
-  border: 1px solid var(--border, #2d2d3d);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
   transition: border-color 0.2s;
 }
 
 .held-card:hover {
-  border-color: var(--primary, #6366f1);
+  border-color: var(--accent);
 }
 
 .held-card.expired {
   opacity: 0.5;
-  border-color: var(--danger, #ef4444);
+  border-color: var(--danger);
 }
 
 .held-card-header {
@@ -57,7 +57,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border, #2d2d3d);
+  border-bottom: 1px solid var(--border);
 }
 
 .held-timer {
@@ -73,7 +73,7 @@
 .held-info {
   font-size: 14px;
   margin-bottom: 6px;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
 }
 
 .held-info.reason {
@@ -82,7 +82,7 @@
 }
 
 .held-items {
-  border-top: 1px solid var(--border, #2d2d3d);
+  border-top: 1px solid var(--border);
   padding-top: 8px;
   margin-top: 8px;
 }
@@ -95,14 +95,14 @@
 }
 
 .held-item.more {
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
   font-style: italic;
 }
 
 .held-total {
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px solid var(--border, #2d2d3d);
+  border-top: 1px solid var(--border);
   font-size: 16px;
   text-align: right;
 }
@@ -111,7 +111,7 @@
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid var(--border, #2d2d3d);
+  border-top: 1px solid var(--border);
   justify-content: flex-end;
 }
 

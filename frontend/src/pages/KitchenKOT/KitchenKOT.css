@@ -5,7 +5,7 @@
 }
 
 .kot-card {
-  background: var(--card-bg, #fff);
+  background: var(--bg-card);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 12px;
   padding: 16px;

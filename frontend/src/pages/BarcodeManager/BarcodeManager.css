@@ -27,7 +27,7 @@
   letter-spacing: 0.5px;
 }
 .barcode-page .bc-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-hover);
 }
 .barcode-page .bc-code {
   background: rgba(255, 255, 255, 0.08);
@@ -46,7 +46,7 @@
   z-index: 1000;
 }
 .barcode-page .bc-modal {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
