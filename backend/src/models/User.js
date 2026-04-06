@@ -5,14 +5,17 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true, minlength: 6 },
+  // Legacy role field kept for backward compatibility
   role: {
     type: String,
     enum: ['admin', 'manager', 'cashier', 'waiter'],
     default: 'waiter',
   },
+  // Dynamic role reference — takes priority over legacy role when set
+  customRole: { type: mongoose.Schema.Types.ObjectId, ref: 'Role' },
   phone: { type: String, trim: true },
   isActive: { type: Boolean, default: true },
-  // Granular permissions managed by admin
+  // Legacy boolean permissions (backward compatible)
   permissions: {
     canEditPrice: { type: Boolean, default: false },
     canGiveDiscount: { type: Boolean, default: false },
@@ -27,14 +30,19 @@ const userSchema = new mongoose.Schema({
     canOpenCounter: { type: Boolean, default: false },
     canCloseCounter: { type: Boolean, default: false },
   },
+  // Granular string-based permissions: ['billing.create', 'order.view', ...]
+  // Used when customRole is set, or can be overridden per-user
+  grantedPermissions: [{ type: String, trim: true }],
   // Daily operational limits
   limits: {
     maxOrderValue: { type: Number, default: 0 }, // 0 = unlimited
     maxDailyDiscount: { type: Number, default: 0 }, // max total discount per day
     maxSingleDiscount: { type: Number, default: 0 }, // max discount per order
   },
-  // 4-digit PIN for authorizing sensitive operations (admin/manager only)
+  // 4-digit PIN for authorizing sensitive operations
   pin: { type: String, select: false },
+  // Token revocation: tokens issued before this date are invalid
+  tokenRevokedAt: { type: Date },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

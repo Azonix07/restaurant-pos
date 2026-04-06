@@ -4,10 +4,14 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
+const compression = require('compression');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 const setupSockets = require('./sockets');
+const logger = require('./utils/logger');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -51,6 +55,7 @@ const whatsappRoutes = require('./routes/whatsapp');
 const deliveryRoutes = require('./routes/delivery');
 const pinRoutes = require('./routes/pin');
 const loadTestRoutes = require('./routes/loadTest');
+const roleRoutes = require('./routes/roles');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -71,10 +76,36 @@ app.set('io', io);
 app.set('port', config.port);
 
 // Middleware
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(compression());
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
+
+// Rate limiting — 200 requests per minute per IP (generous for POS LAN use)
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please slow down' },
+});
+app.use('/api/', apiLimiter);
+
+// Auth endpoints get stricter rate limiting (20 per minute)
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { message: 'Too many login attempts, please wait' },
+});
+app.use('/api/auth/login', authLimiter);
+
+// Logging
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
+}
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -118,6 +149,7 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/pin', pinRoutes);
 app.use('/api/load-test', loadTestRoutes);
+app.use('/api/roles', roleRoutes);
 
 // Serve uploaded images with caching
 app.use('/uploads/images', serveImages);
@@ -125,7 +157,15 @@ app.use('/uploads/wastage', serveWastage);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), mode: 'lan' });
+  const mongoose = require('mongoose');
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    mode: 'lan',
+    uptime: process.uptime(),
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+  });
 });
 
 // Serve frontend in production
@@ -162,15 +202,24 @@ const startServer = async () => {
   try {
     await connectDB();
   } catch (error) {
-    console.error('Failed to start: Database connection failed after retries');
-    console.error(error.message);
+    logger.error('Failed to start: Database connection failed after retries');
+    logger.error(error.message);
     process.exit(1);
+  }
+
+  // Seed default roles
+  try {
+    const { seedDefaults } = require('./controllers/roleController');
+    await seedDefaults();
+    logger.info('Default roles seeded');
+  } catch (err) {
+    logger.warn('Role seeding skipped: ' + err.message);
   }
 
   // Start cloud sync service after a delay (non-blocking)
   setTimeout(() => {
     const { startSync } = require('./services/cloudSync');
-    startSync().catch(err => console.error('[CloudSync] Init error:', err.message));
+    startSync().catch(err => logger.warn('[CloudSync] Init error: ' + err.message));
   }, 5000);
 
   server.listen(config.port, '0.0.0.0', () => {
@@ -192,6 +241,7 @@ const startServer = async () => {
     console.log('='.repeat(50));
     console.log(`Local:   http://localhost:${config.port}`);
     console.log(`LAN:     http://${lanIP}:${config.port}`);
+    console.log(`Mode:    ${process.env.NODE_ENV || 'development'}`);
     console.log('='.repeat(50));
   });
 };

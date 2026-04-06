@@ -10,15 +10,19 @@ const signToken = (user) => {
 
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role, phone } = req.body;
+    const { name, email, password, role, phone, customRole } = req.body;
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const user = await User.create({ name, email, password, role, phone });
+    const userData = { name, email, password, role, phone };
+    if (customRole) userData.customRole = customRole;
+
+    const user = await User.create(userData);
     const token = signToken(user);
-    res.status(201).json({ token, user });
+    const populated = await User.findById(user._id).select('-password').populate('customRole');
+    res.status(201).json({ token, user: populated });
   } catch (error) {
     next(error);
   }
@@ -41,7 +45,8 @@ exports.login = async (req, res, next) => {
     }
 
     const token = signToken(user);
-    res.json({ token, user });
+    const populated = await User.findById(user._id).select('-password').populate('customRole');
+    res.json({ token, user: populated });
   } catch (error) {
     next(error);
   }
@@ -53,7 +58,7 @@ exports.getProfile = async (req, res) => {
 
 exports.getUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    const users = await User.find().select('-password').populate('customRole').sort({ createdAt: -1 });
     res.json({ users });
   } catch (error) {
     next(error);
@@ -62,7 +67,7 @@ exports.getUsers = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   try {
-    const { name, role, phone, isActive, permissions, limits, pin } = req.body;
+    const { name, role, phone, isActive, permissions, limits, pin, customRole, grantedPermissions, revokeTokens } = req.body;
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (role !== undefined) updateData.role = role;
@@ -70,16 +75,22 @@ exports.updateUser = async (req, res, next) => {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (permissions !== undefined) updateData.permissions = permissions;
     if (limits !== undefined) updateData.limits = limits;
+    if (customRole !== undefined) updateData.customRole = customRole || null;
+    if (grantedPermissions !== undefined) updateData.grantedPermissions = grantedPermissions;
     if (pin !== undefined) {
       const bcrypt = require('bcryptjs');
       updateData.pin = await bcrypt.hash(pin, 12);
+    }
+    // Revoke all existing tokens for this user
+    if (revokeTokens) {
+      updateData.tokenRevokedAt = new Date();
     }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
-    ).select('-password');
+    ).select('-password').populate('customRole');
 
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ user });

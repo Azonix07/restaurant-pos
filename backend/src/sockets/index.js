@@ -2,8 +2,11 @@ const { SOCKET_EVENTS } = require('../../../shared/constants');
 const Device = require('../models/Device');
 const AlertLog = require('../models/AlertLog');
 const KOT = require('../models/KOT');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+const User = require('../models/User');
 
-// Track connected devices: socketId -> { deviceId, lastHeartbeat }
+// Track connected devices: socketId -> { deviceId, lastHeartbeat, userId }
 const connectedDevices = new Map();
 
 // Heartbeat check interval (runs on master)
@@ -11,6 +14,30 @@ let heartbeatCheckInterval = null;
 let kitchenDelayCheckInterval = null;
 
 const setupSockets = (io) => {
+  // Socket authentication middleware
+  io.use(async (socket, next) => {
+    try {
+      const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+      if (!token) {
+        // Allow unauthenticated connections for QR ordering / public displays
+        // but mark them as guest
+        socket.user = null;
+        return next();
+      }
+      const decoded = jwt.verify(token, config.jwtSecret);
+      const user = await User.findById(decoded.id).select('name role isActive');
+      if (!user || !user.isActive) {
+        return next(new Error('Authentication failed'));
+      }
+      socket.user = user;
+      next();
+    } catch (err) {
+      // Allow connection but mark as unauthenticated
+      socket.user = null;
+      next();
+    }
+  });
+
   // Start heartbeat monitor - check every 10 seconds
   if (heartbeatCheckInterval) clearInterval(heartbeatCheckInterval);
   if (kitchenDelayCheckInterval) clearInterval(kitchenDelayCheckInterval);
@@ -268,6 +295,70 @@ const setupSockets = (io) => {
           tableNumber: data.tableNumber,
         });
       }
+    });
+
+    // ---- KITCHEN BUMP (complete order from kitchen display) ----
+
+    socket.on('kitchen:bump', async (data) => {
+      try {
+        const { orderId, kotId, section } = data;
+        // Mark KOT as completed
+        if (kotId) {
+          await KOT.findByIdAndUpdate(kotId, { status: 'completed', completedAt: new Date() });
+        }
+        // Notify all connected clients
+        io.emit('kitchen:bumped', { orderId, kotId, section, bumpedBy: socket.user?.name || 'Kitchen' });
+        // Sound alert to waiters/billing that order is ready
+        io.emit(SOCKET_EVENTS.SOUND_ORDER_READY, {
+          orderId,
+          orderNumber: data.orderNumber,
+          tableNumber: data.tableNumber,
+        });
+        // Targeted notification to waiter room
+        io.to('waiter').emit('waiter:order_ready', {
+          orderId,
+          orderNumber: data.orderNumber,
+          tableNumber: data.tableNumber,
+          section,
+        });
+      } catch (err) {
+        socket.emit('error', { message: 'Bump failed: ' + err.message });
+      }
+    });
+
+    // ---- OWNER REMOTE CONTROL EVENTS ----
+
+    socket.on('owner:lock_system', (data) => {
+      // Only admin role can lock
+      if (!socket.user || socket.user.role !== 'admin') {
+        return socket.emit('error', { message: 'Admin only' });
+      }
+      io.emit('system:locked', { reason: data.reason, lockedBy: socket.user.name });
+    });
+
+    socket.on('owner:unlock_system', () => {
+      if (!socket.user || socket.user.role !== 'admin') {
+        return socket.emit('error', { message: 'Admin only' });
+      }
+      io.emit('system:unlocked', { unlockedBy: socket.user.name });
+    });
+
+    socket.on('owner:toggle_rush_mode', (data) => {
+      if (!socket.user || !['admin', 'manager'].includes(socket.user.role)) {
+        return socket.emit('error', { message: 'Unauthorized' });
+      }
+      io.emit('system:rush_mode', { enabled: data.enabled, toggledBy: socket.user.name });
+    });
+
+    socket.on('owner:approve_refund', (data) => {
+      if (!socket.user || !['admin', 'manager'].includes(socket.user.role)) {
+        return socket.emit('error', { message: 'Unauthorized' });
+      }
+      io.emit('refund:approved', {
+        orderId: data.orderId,
+        approvedBy: socket.user.name,
+        amount: data.amount,
+      });
     });
 
     // ---- DISCONNECT ----

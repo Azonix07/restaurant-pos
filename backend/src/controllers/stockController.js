@@ -48,12 +48,25 @@ exports.stockIn = async (req, res, next) => {
 
     const previousStock = material.currentStock;
     material.currentStock += quantity;
+    material.lastMovementDate = new Date();
     if (costPerUnit) {
       material.costPerUnit = costPerUnit;
       material.lastPurchasePrice = costPerUnit;
       material.lastPurchaseDate = new Date();
     }
     if (supplier) material.supplier = supplier;
+
+    // Add batch record
+    material.batches.push({
+      batchNumber: batchNumber || `B-${Date.now()}`,
+      quantity,
+      costPerUnit: costPerUnit || material.costPerUnit,
+      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+      receivedDate: new Date(),
+      supplier,
+      invoiceNumber,
+    });
+
     await material.save();
 
     await StockMovement.create({
@@ -146,27 +159,45 @@ exports.deductStockForOrder = async (orderItems, userId) => {
 
       const totalQty = ing.quantity * item.quantity * (1 + (ing.wastagePercent || 0) / 100);
       const previousStock = rm.currentStock;
-      // Use atomic update to prevent race conditions
-      const updated = await RawMaterial.findByIdAndUpdate(
-        rm._id,
-        { $inc: { currentStock: -totalQty } },
+
+      // Prevent negative stock — only deduct what's available
+      const actualDeduct = Math.min(totalQty, rm.currentStock);
+      if (actualDeduct <= 0) {
+        // Out of stock — log critical alert but don't block sale
+        await AlertLog.create({
+          type: 'out_of_stock',
+          severity: 'critical',
+          title: `Out of stock: ${rm.name}`,
+          message: `${rm.name} needed ${totalQty} ${rm.unit} for ${item.name} but has 0 in stock`,
+          metadata: { materialId: rm._id, needed: totalQty, available: 0 },
+        });
+        continue;
+      }
+
+      // Use atomic update with $gte guard to prevent race conditions
+      const updated = await RawMaterial.findOneAndUpdate(
+        { _id: rm._id, currentStock: { $gte: actualDeduct } },
+        {
+          $inc: { currentStock: -actualDeduct },
+          $set: { lastMovementDate: new Date() },
+        },
         { new: true }
       );
-      // Ensure stock doesn't go below 0
-      if (updated.currentStock < 0) {
-        await RawMaterial.findByIdAndUpdate(rm._id, { $set: { currentStock: 0 } });
-        updated.currentStock = 0;
+
+      if (!updated) {
+        // Concurrent update — skip silently, will catch on next check
+        continue;
       }
 
       movements.push(await StockMovement.create({
         rawMaterial: rm._id,
         type: 'sale',
-        quantity: totalQty,
+        quantity: actualDeduct,
         unit: rm.unit,
         previousStock,
         newStock: updated.currentStock,
         costPerUnit: rm.costPerUnit,
-        totalCost: totalQty * rm.costPerUnit,
+        totalCost: actualDeduct * rm.costPerUnit,
         recipe: recipe._id,
         reason: `Sale: ${item.name} x${item.quantity}`,
         performedBy: userId,
@@ -285,6 +316,67 @@ exports.findByBarcode = async (req, res, next) => {
     if (menuItem) return res.json({ type: 'menu_item', item: menuItem });
 
     res.status(404).json({ message: 'No item found with this barcode' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get items expiring soon (batch-wise)
+exports.getExpiringItems = async (req, res, next) => {
+  try {
+    const daysAhead = parseInt(req.query.days) || 7;
+    const cutoff = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
+
+    const materials = await RawMaterial.find({
+      isActive: true,
+      'batches.expiryDate': { $lte: cutoff, $gte: new Date() },
+    }).select('name category unit batches');
+
+    const expiring = [];
+    for (const mat of materials) {
+      for (const batch of mat.batches) {
+        if (batch.expiryDate && batch.expiryDate <= cutoff && batch.expiryDate >= new Date() && batch.quantity > 0) {
+          expiring.push({
+            materialId: mat._id,
+            materialName: mat.name,
+            category: mat.category,
+            batchNumber: batch.batchNumber,
+            quantity: batch.quantity,
+            unit: mat.unit,
+            expiryDate: batch.expiryDate,
+            daysLeft: Math.ceil((batch.expiryDate - Date.now()) / (24 * 60 * 60 * 1000)),
+          });
+        }
+      }
+    }
+
+    expiring.sort((a, b) => a.daysLeft - b.daysLeft);
+    res.json({ expiring, count: expiring.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get dead stock (no movement for 30+ days)
+exports.getDeadStock = async (req, res, next) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const deadStock = await RawMaterial.find({
+      isActive: true,
+      currentStock: { $gt: 0 },
+      lastMovementDate: { $lt: cutoff },
+    }).select('name category unit currentStock costPerUnit lastMovementDate').sort({ lastMovementDate: 1 });
+
+    const items = deadStock.map(item => ({
+      ...item.toObject(),
+      daysSinceMovement: Math.floor((Date.now() - item.lastMovementDate.getTime()) / (24 * 60 * 60 * 1000)),
+      stockValue: item.currentStock * item.costPerUnit,
+    }));
+
+    const totalValue = items.reduce((sum, i) => sum + i.stockValue, 0);
+    res.json({ deadStock: items, count: items.length, totalValue });
   } catch (error) {
     next(error);
   }

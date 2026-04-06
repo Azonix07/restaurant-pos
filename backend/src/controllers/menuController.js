@@ -1,18 +1,26 @@
 const MenuItem = require('../models/MenuItem');
 const { SOCKET_EVENTS } = require('../../../shared/constants');
 const { generateEAN13, generateESCPOSBarcodeCommands } = require('../utils/barcode');
+const cache = require('../utils/cache');
 
 exports.getAll = async (req, res, next) => {
   try {
     const { category, available, search } = req.query;
-    const filter = {};
+    const cacheKey = `menu:${category || 'all'}:${available || 'any'}:${search || ''}`;
 
+    // Check cache first (30 second TTL)
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    const filter = {};
     if (category) filter.category = category;
     if (available !== undefined) filter.isAvailable = available === 'true';
     if (search) filter.$text = { $search: search };
 
     const items = await MenuItem.find(filter).sort({ category: 1, name: 1 });
-    res.json({ items });
+    const result = { items };
+    cache.set(cacheKey, result, 30000);
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -20,8 +28,13 @@ exports.getAll = async (req, res, next) => {
 
 exports.getCategories = async (req, res, next) => {
   try {
+    const cached = cache.get('menu:categories');
+    if (cached) return res.json(cached);
+
     const categories = await MenuItem.distinct('category');
-    res.json({ categories });
+    const result = { categories };
+    cache.set('menu:categories', result, 60000);
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -30,6 +43,7 @@ exports.getCategories = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const item = await MenuItem.create(req.body);
+    cache.invalidate('menu:*'); // Invalidate menu cache
     const io = req.app.get('io');
     if (io) io.emit(SOCKET_EVENTS.MENU_UPDATE, { action: 'create', item });
     res.status(201).json({ item });
@@ -45,6 +59,7 @@ exports.update = async (req, res, next) => {
       runValidators: true,
     });
     if (!item) return res.status(404).json({ message: 'Menu item not found' });
+    cache.invalidate('menu:*'); // Invalidate menu cache
     const io = req.app.get('io');
     if (io) io.emit(SOCKET_EVENTS.MENU_UPDATE, { action: 'update', item });
     res.json({ item });
@@ -57,6 +72,7 @@ exports.remove = async (req, res, next) => {
   try {
     const item = await MenuItem.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ message: 'Menu item not found' });
+    cache.invalidate('menu:*');
     const io = req.app.get('io');
     if (io) io.emit(SOCKET_EVENTS.MENU_DELETE, { itemId: req.params.id });
     res.json({ message: 'Item deleted' });

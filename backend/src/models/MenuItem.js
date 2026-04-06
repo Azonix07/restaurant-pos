@@ -29,6 +29,20 @@ const menuItemSchema = new mongoose.Schema({
     enum: ['kitchen', 'veg_kitchen', 'nonveg_kitchen', 'bakery', 'bar', 'juice_counter', 'desserts'],
     default: 'kitchen',
   },
+  // Item modifiers/add-ons (Extra cheese, Less spicy, etc.)
+  modifiers: [{
+    name: { type: String, required: true, trim: true },
+    price: { type: Number, default: 0 },
+    isDefault: { type: Boolean, default: false },
+    group: { type: String, trim: true }, // e.g. 'spice_level', 'add_ons', 'size'
+    maxSelect: { type: Number, default: 1 }, // max selections per group
+  }],
+  // Dietary/allergen tags
+  dietary: {
+    isJain: { type: Boolean, default: false },
+    isGlutenFree: { type: Boolean, default: false },
+    containsNuts: { type: Boolean, default: false },
+  },
   stock: { type: Number, default: 0 },
   lowStockThreshold: { type: Number, default: 10 },
   tags: [{ type: String, trim: true }],

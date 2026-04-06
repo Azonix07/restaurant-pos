@@ -12,10 +12,15 @@ const auth = async (req, res, next) => {
 
     const token = header.split(' ')[1];
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password').populate('customRole');
 
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'User not found or inactive' });
+    }
+
+    // Token revocation check
+    if (user.tokenRevokedAt && decoded.iat * 1000 < user.tokenRevokedAt.getTime()) {
+      return res.status(401).json({ message: 'Token has been revoked. Please login again.' });
     }
 
     req.user = user;
@@ -43,12 +48,16 @@ const auth = async (req, res, next) => {
   }
 };
 
+// Authorize by legacy role names OR dynamic role
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
-    }
-    next();
+    // Admin always passes
+    if (req.user.role === 'admin') return next();
+    // Check legacy role
+    if (roles.includes(req.user.role)) return next();
+    // Check dynamic role name
+    if (req.user.customRole && roles.includes(req.user.customRole.name)) return next();
+    return res.status(403).json({ message: 'Insufficient permissions' });
   };
 };
 
@@ -87,12 +96,38 @@ const requireDevice = async (req, res, next) => {
   next();
 };
 
-// Check granular permission
+// Check granular permission — supports both legacy boolean and dynamic string permissions
 const checkPermission = (permission) => {
   return (req, res, next) => {
     // Admin always has all permissions
     if (req.user.role === 'admin') return next();
+
+    // Check dynamic string-based permissions first
+    // 1. User-level overrides
+    if (req.user.grantedPermissions && req.user.grantedPermissions.includes(permission)) return next();
+    // 2. Role-level permissions
+    if (req.user.customRole && req.user.customRole.permissions && req.user.customRole.permissions.includes(permission)) return next();
+
+    // 3. Legacy boolean permissions fallback
     if (req.user.permissions && req.user.permissions[permission]) return next();
+
+    // 4. Map new string permissions to legacy boolean fields
+    const legacyMap = {
+      'menu.price_edit': 'canEditPrice',
+      'billing.discount': 'canGiveDiscount',
+      'order.cancel': 'canCancelOrder',
+      'kot.delete': 'canDeleteKOT',
+      'reports.view': 'canViewReports',
+      'reports.export': 'canExportData',
+      'menu.edit': 'canModifyMenu',
+      'inventory.update': 'canManageInventory',
+      'billing.refund': 'canProcessRefund',
+      'counter.open': 'canOpenCounter',
+      'counter.close': 'canCloseCounter',
+    };
+    const legacyField = legacyMap[permission];
+    if (legacyField && req.user.permissions && req.user.permissions[legacyField]) return next();
+
     return res.status(403).json({ message: `Permission denied: ${permission}` });
   };
 };

@@ -17,6 +17,18 @@ const rawMaterialSchema = new mongoose.Schema({
   expiryDate: { type: Date },
   storageLocation: { type: String, trim: true },
   isActive: { type: Boolean, default: true },
+  // Batch-wise stock tracking
+  batches: [{
+    batchNumber: { type: String, trim: true },
+    quantity: { type: Number, default: 0 },
+    costPerUnit: { type: Number, default: 0 },
+    expiryDate: { type: Date },
+    receivedDate: { type: Date, default: Date.now },
+    supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Party' },
+    invoiceNumber: { type: String, trim: true },
+  }],
+  // Dead stock flag — no movement for 30+ days
+  lastMovementDate: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 rawMaterialSchema.index({ name: 'text', category: 'text' });

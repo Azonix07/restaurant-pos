@@ -22,4 +22,8 @@ router.delete('/recipes/:id', auth, authorize('admin'), masterOnly, ctrl.deleteR
 // Barcode lookup
 router.get('/barcode/:barcode', auth, ctrl.findByBarcode);
 
+// Expiry and dead stock reports
+router.get('/expiring', auth, authorize('admin', 'manager'), ctrl.getExpiringItems);
+router.get('/dead-stock', auth, authorize('admin', 'manager'), ctrl.getDeadStock);
+
 module.exports = router;

@@ -5,6 +5,12 @@ const orderItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1 },
   price: { type: Number, required: true },
+  // Selected modifiers for this item
+  modifiers: [{
+    name: { type: String, trim: true },
+    price: { type: Number, default: 0 },
+  }],
+  modifierTotal: { type: Number, default: 0 },
   status: {
     type: String,
     enum: ['placed', 'confirmed', 'preparing', 'ready', 'served', 'cancelled'],
@@ -84,15 +90,18 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ table: 1, status: 1 });
+orderSchema.index({ customerPhone: 1 });
+orderSchema.index({ 'paymentStatus': 1 });
+orderSchema.index({ createdAt: -1 });
 
 orderSchema.methods.calculateTotals = function () {
   this.subtotal = this.items
     .filter(item => item.status !== 'cancelled')
-    .reduce((sum, item) => sum + item.price * item.quantity, 0);
+    .reduce((sum, item) => sum + (item.price + (item.modifierTotal || 0)) * item.quantity, 0);
 
   this.gstAmount = this.items
     .filter(item => item.status !== 'cancelled')
-    .reduce((sum, item) => sum + (item.price * item.quantity * item.gstRate) / 100, 0);
+    .reduce((sum, item) => sum + ((item.price + (item.modifierTotal || 0)) * item.quantity * item.gstRate) / 100, 0);
 
   this.total = this.subtotal + this.gstAmount - this.discount;
   return this;

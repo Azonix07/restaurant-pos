@@ -1,5 +1,14 @@
+const logger = require('../utils/logger');
+
 const errorHandler = (err, req, res, _next) => {
-  console.error('Error:', err.message);
+  // Log with structured data
+  logger.error(err.message, {
+    stack: err.stack,
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+    userId: req.user?._id,
+  });
 
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map(e => e.message);
@@ -15,9 +24,23 @@ const errorHandler = (err, req, res, _next) => {
     return res.status(400).json({ message: 'Invalid ID format' });
   }
 
-  res.status(err.statusCode || 500).json({
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ message: 'Token expired, please login again' });
+  }
+
+  // Don't leak stack traces in production
+  const response = {
     message: err.message || 'Internal Server Error',
-  });
+  };
+  if (process.env.NODE_ENV !== 'production') {
+    response.stack = err.stack;
+  }
+
+  res.status(err.statusCode || 500).json(response);
 };
 
 module.exports = errorHandler;
