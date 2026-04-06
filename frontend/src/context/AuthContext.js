@@ -22,13 +22,16 @@ export const AuthProvider = ({ children }) => {
         api.get('/auth/me').then(({ data }) => {
           setUser(data.user);
           localStorage.setItem('pos_user', JSON.stringify(data.user));
-        }).catch(() => {
-          // Token expired or invalid - clear auth state
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('pos_token');
-          localStorage.removeItem('pos_user');
-          disconnectSocket();
+        }).catch((err) => {
+          // Only clear auth for actual 401 errors, not network failures
+          if (err.response?.status === 401) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('pos_token');
+            localStorage.removeItem('pos_user');
+            disconnectSocket();
+          }
+          // Network errors: keep cached auth — server might be starting up
         });
       } catch {
         localStorage.removeItem('pos_token');

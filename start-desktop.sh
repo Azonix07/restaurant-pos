@@ -12,14 +12,8 @@ echo "    Restaurant POS — Desktop Application"
 echo "════════════════════════════════════════════════════════"
 echo ""
 
-# Ensure MongoDB is running
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    brew services start mongodb-community 2>/dev/null || true
-else
-    sudo systemctl start mongod 2>/dev/null || true
-fi
-
 echo "[i] Launching Restaurant POS Desktop App..."
+echo "    (Uses embedded database — no external MongoDB needed)"
 echo ""
 
 cd "$PROJECT_DIR/electron"

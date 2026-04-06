@@ -133,7 +133,13 @@ setupSockets(io);
 
 // Start server
 const startServer = async () => {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (error) {
+    console.error('Failed to start: Database connection failed after retries');
+    console.error(error.message);
+    process.exit(1);
+  }
 
   // Start cloud sync service after a delay (non-blocking)
   setTimeout(() => {

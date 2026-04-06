@@ -29,6 +29,11 @@ let splashWindow = null;
 let backendProcess = null;
 let mongod = null;
 
+// Startup state tracking
+let startupState = { phase: 'init', detail: '', error: null, mongoUri: '' };
+let backendRestartCount = 0;
+const MAX_BACKEND_RESTARTS = 3;
+
 // Prevent multiple instances — avoids port conflicts from duplicate launches
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
@@ -95,6 +100,17 @@ function splashStatus(text, pct) {
     splashWindow.webContents
       .executeJavaScript(`updateStatus("${text}", ${pct})`)
       .catch(() => {});
+  }
+}
+
+/** Send startup status to the main window (for loading.html). */
+function sendStartupStatus(phase, detail = '', error = null) {
+  startupState.phase = phase;
+  startupState.detail = detail;
+  startupState.error = error;
+  logToFile(`[Status] ${phase}: ${detail}${error ? ' ERROR: ' + error : ''}`);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('startup-status', { phase, detail, error });
   }
 }
 
@@ -213,8 +229,25 @@ function startBackend(mongoUri) {
     backendProcess.on('exit', (code) => {
       console.log('[Backend] Exited with code', code);
       logToFile(`[Backend exit] code=${code}`);
+      const deadProcess = backendProcess;
       backendProcess = null;
       if (!resolved) { resolved = true; resolve(); }
+
+      // Auto-restart backend if it crashed unexpectedly
+      if (code !== 0 && startupState.mongoUri && backendRestartCount < MAX_BACKEND_RESTARTS) {
+        backendRestartCount++;
+        logToFile(`[Backend] Auto-restarting (attempt ${backendRestartCount}/${MAX_BACKEND_RESTARTS})`);
+        sendStartupStatus('restarting', `Server crashed, restarting (${backendRestartCount}/${MAX_BACKEND_RESTARTS})...`);
+        setTimeout(async () => {
+          await startBackend(startupState.mongoUri);
+          const ready = await waitForServer(10, 2000);
+          if (ready) {
+            sendStartupStatus('ready', 'Server is running');
+          } else {
+            sendStartupStatus('error', 'Server failed to start', 'Backend process exited unexpectedly');
+          }
+        }, 2000);
+      }
     });
 
     // Safety timeout
@@ -318,7 +351,22 @@ app.whenReady().then(async () => {
     // 1. Start embedded MongoDB
     splashStatus('Starting database', 10);
     console.log('[Startup] Starting embedded MongoDB...');
-    mongoUri = await startMongoDB();
+    try {
+      mongoUri = await startMongoDB();
+      startupState.mongoUri = mongoUri;
+    } catch (mongoErr) {
+      const msg = mongoErr.message || String(mongoErr);
+      logToFile(`[MongoDB Error] ${msg}`);
+      // Check if it's a download error (first run without internet)
+      if (msg.includes('download') || msg.includes('fetch') || msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
+        splashStatus('Database download failed', 30);
+        startupState.error = 'MongoDB binary download failed. Please check your internet connection for the first run.';
+      } else {
+        splashStatus('Database error', 30);
+        startupState.error = `Database failed to start: ${msg}`;
+      }
+      throw mongoErr;
+    }
     logToFile(`MongoDB URI: ${mongoUri}`);
     splashStatus('Database ready', 35);
 
@@ -337,18 +385,40 @@ app.whenReady().then(async () => {
     await startBackend(mongoUri);
     splashStatus('Server started', 75);
 
-    // 4. Wait for server with retries
-    serverReady = await waitForServer(8, 2000);
+    // 4. Wait for server with retries (more generous: 12 retries × 2s = 24s)
+    serverReady = await waitForServer(12, 2000);
     logToFile(`Server ready: ${serverReady}`);
     splashStatus(serverReady ? 'Ready' : 'Finishing up', 95);
+
+    if (serverReady) {
+      startupState.phase = 'ready';
+    }
   } catch (err) {
     console.error('[Startup] Error:', err);
     logToFile(`[Startup error] ${err.stack || err.message || err}`);
+    if (!startupState.error) {
+      startupState.error = err.message || 'Unknown startup error';
+    }
   }
 
   // 5. Open the main window immediately — it will either load the app
   //    or show loading.html which polls until the server is up
   createMainWindow(serverReady);
+
+  // If loading.html was shown, send startup state once it's loaded
+  if (!serverReady && mainWindow) {
+    mainWindow.webContents.on('did-finish-load', () => {
+      if (startupState.error) {
+        sendStartupStatus('error', startupState.error, startupState.error);
+      } else if (startupState.mongoUri && !backendProcess) {
+        sendStartupStatus('error', 'Server process exited', 'Backend process is not running');
+      } else if (startupState.mongoUri) {
+        sendStartupStatus('connecting', 'Server is starting, waiting for it to be ready...');
+      } else {
+        sendStartupStatus('starting-db', 'Starting database...');
+      }
+    });
+  }
 
   // 6. Initialize auto-updater (only in packaged builds)
   if (app.isPackaged && mainWindow) {
@@ -404,3 +474,46 @@ ipcMain.handle('print-bill', async (_event, html) => {
 });
 
 ipcMain.handle('get-server-url', () => SERVER_URL);
+
+ipcMain.handle('get-startup-state', () => ({
+  phase: startupState.phase,
+  detail: startupState.detail,
+  error: startupState.error,
+  mongoUri: !!startupState.mongoUri,
+  backendRunning: !!backendProcess,
+  serverUrl: SERVER_URL,
+  logPath: logFilePath,
+}));
+
+ipcMain.handle('restart-backend', async () => {
+  logToFile('[IPC] Manual restart-backend requested');
+  if (!startupState.mongoUri) {
+    // Try starting MongoDB first
+    sendStartupStatus('starting-db', 'Starting database...');
+    try {
+      const uri = await startMongoDB();
+      startupState.mongoUri = uri;
+      logToFile(`[Restart] MongoDB URI: ${uri}`);
+    } catch (err) {
+      sendStartupStatus('error', 'Database failed to start', err.message);
+      return false;
+    }
+  }
+
+  // Kill existing backend if stuck
+  if (backendProcess) {
+    try { backendProcess.kill(); } catch (_) {}
+    backendProcess = null;
+  }
+
+  backendRestartCount = 0;
+  sendStartupStatus('starting-server', 'Starting server...');
+  await startBackend(startupState.mongoUri);
+  const ready = await waitForServer(12, 2000);
+  if (ready) {
+    sendStartupStatus('ready', 'Server is running');
+  } else {
+    sendStartupStatus('error', 'Server failed to start after restart', 'Health check failed');
+  }
+  return ready;
+});

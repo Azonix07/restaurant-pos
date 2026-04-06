@@ -10,11 +10,11 @@
  * The LAN server is the primary data source. Cloud is for remote access by admin.
  */
 
-const HEALTH_CHECK_INTERVAL = 10000; // 10s
+const HEALTH_CHECK_INTERVAL = 15000; // 15s (less aggressive to avoid spamming during startup)
 const INTERNET_CHECK_INTERVAL = 30000; // 30s
 const INTERNET_CHECK_URL = 'https://dns.google/resolve?name=example.com&type=A';
 
-let currentMode = 'online'; // Start optimistic
+let currentMode = 'lan'; // Start assuming LAN (embedded server should always be available)
 let lanReachable = true;
 let internetReachable = navigator.onLine;
 let healthCheckTimer = null;
@@ -106,8 +106,12 @@ const notifyListeners = (event) => {
  * Start monitoring connection status
  */
 const startMonitoring = () => {
-  // Initial checks
-  checkLAN().then(() => checkInternet()).then(() => evaluateMode());
+  // Initial check — prioritize LAN check (fast), delay internet check
+  checkLAN().then(() => evaluateMode());
+  // Delay internet check to avoid false "offline" during startup
+  setTimeout(() => {
+    checkInternet().then(() => evaluateMode());
+  }, 5000);
 
   // Periodic LAN health check (fast, every 10s)
   healthCheckTimer = setInterval(async () => {

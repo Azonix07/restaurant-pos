@@ -10,5 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update-status', (_event, data) => callback(data));
   },
+  onStartupStatus: (callback) => {
+    ipcRenderer.on('startup-status', (_event, data) => callback(data));
+  },
+  restartBackend: () => ipcRenderer.invoke('restart-backend'),
+  getStartupState: () => ipcRenderer.invoke('get-startup-state'),
   platform: process.platform,
 });

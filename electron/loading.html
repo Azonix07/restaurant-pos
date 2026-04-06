@@ -20,6 +20,7 @@
   .card {
     text-align: center;
     padding: 48px;
+    max-width: 420px;
   }
   .spinner {
     width: 40px; height: 40px;
@@ -31,49 +32,277 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-  p { font-size: 13px; color: #64748b; }
-  .retry { display: none; margin-top: 20px; }
-  .retry button {
-    background: #4f46e5; color: #fff; border: none;
-    padding: 10px 28px; border-radius: 8px; font-size: 14px;
-    cursor: pointer;
+  p { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .error-text { color: #dc2626; font-size: 12px; margin-top: 12px; background: #fef2f2; padding: 10px 14px; border-radius: 8px; text-align: left; word-break: break-word; }
+  .steps { margin: 20px 0; text-align: left; }
+  .step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0; font-size: 13px; color: #94a3b8;
+    transition: color 0.3s;
   }
-  .retry button:hover { background: #4338ca; }
+  .step.active { color: #4f46e5; font-weight: 500; }
+  .step.done { color: #10b981; }
+  .step.failed { color: #dc2626; }
+  .step-icon {
+    width: 20px; height: 20px;
+    border-radius: 50%; border: 2px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+  .step.done .step-icon { background: #10b981; color: #fff; border-color: #10b981; }
+  .step.active .step-icon { border-color: #4f46e5; animation: pulse 1.5s ease infinite; }
+  .step.failed .step-icon { background: #dc2626; color: #fff; border-color: #dc2626; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; }
+  .btn {
+    border: none; padding: 10px 24px; border-radius: 8px;
+    font-size: 14px; cursor: pointer; font-weight: 500;
+    transition: background 0.2s;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+  .btn-secondary { background: #e2e8f0; color: #475569; }
+  .btn-secondary:hover { background: #cbd5e1; }
+  .hidden { display: none; }
+  .log-hint { font-size: 11px; color: #94a3b8; margin-top: 16px; }
 </style>
 </head>
 <body>
   <div class="card">
     <div class="spinner" id="spinner"></div>
-    <h2 id="title">Connecting to server...</h2>
-    <p id="msg">Please wait while the application starts</p>
-    <div class="retry" id="retryBox">
-      <button onclick="tryConnect()">Retry</button>
+    <h2 id="title">Starting Restaurant POS</h2>
+    <p id="msg">Setting up your system...</p>
+
+    <div class="steps" id="steps">
+      <div class="step active" id="step-db">
+        <span class="step-icon"></span>
+        <span>Starting database</span>
+      </div>
+      <div class="step" id="step-server">
+        <span class="step-icon"></span>
+        <span>Starting server</span>
+      </div>
+      <div class="step" id="step-connect">
+        <span class="step-icon"></span>
+        <span>Connecting</span>
+      </div>
     </div>
+
+    <div class="error-text hidden" id="errorBox"></div>
+
+    <div class="actions hidden" id="actionBox">
+      <button class="btn btn-primary" id="retryBtn" onclick="handleRetry()">Restart Server</button>
+    </div>
+
+    <p class="log-hint hidden" id="logHint"></p>
   </div>
+
   <script>
     const SERVER = 'http://localhost:5001';
+    let phase = 'starting-db';
+    let pollTimer = null;
     let attempts = 0;
-    function tryConnect() {
-      attempts++;
-      document.getElementById('spinner').style.display = 'block';
-      document.getElementById('retryBox').style.display = 'none';
-      document.getElementById('title').textContent = 'Connecting to server...';
-      document.getElementById('msg').textContent = 'Attempt ' + attempts;
-      fetch(SERVER + '/api/health', { signal: AbortSignal.timeout(3000) })
-        .then(r => { if (r.ok) window.location.href = SERVER; else retry(); })
-        .catch(() => retry());
+    let isRestarting = false;
+
+    // Step management
+    function setStep(id, state) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'step ' + state;
+      const icon = el.querySelector('.step-icon');
+      if (state === 'done') icon.textContent = '✓';
+      else if (state === 'failed') icon.textContent = '✕';
+      else icon.textContent = '';
     }
-    function retry() {
-      if (attempts < 60) {
-        setTimeout(tryConnect, 1500);
-      } else {
-        document.getElementById('spinner').style.display = 'none';
-        document.getElementById('title').textContent = 'Could not connect';
-        document.getElementById('msg').textContent = 'The server is taking too long to start.';
-        document.getElementById('retryBox').style.display = 'block';
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg;
+      box.classList.remove('hidden');
+      document.getElementById('actionBox').classList.remove('hidden');
+      document.getElementById('spinner').style.display = 'none';
+    }
+
+    function hideError() {
+      document.getElementById('errorBox').classList.add('hidden');
+      document.getElementById('spinner').style.display = 'block';
+    }
+
+    // Handle status updates from Electron main process
+    function handleStartupStatus(data) {
+      const { phase: p, detail, error } = data;
+      phase = p;
+
+      switch (p) {
+        case 'starting-db':
+          setStep('step-db', 'active');
+          setStep('step-server', '');
+          setStep('step-connect', '');
+          document.getElementById('title').textContent = 'Starting Database';
+          document.getElementById('msg').textContent = detail || 'Initializing embedded database...';
+          hideError();
+          break;
+
+        case 'starting-server':
+          setStep('step-db', 'done');
+          setStep('step-server', 'active');
+          setStep('step-connect', '');
+          document.getElementById('title').textContent = 'Starting Server';
+          document.getElementById('msg').textContent = detail || 'Backend is initializing...';
+          hideError();
+          break;
+
+        case 'connecting':
+          setStep('step-db', 'done');
+          setStep('step-server', 'done');
+          setStep('step-connect', 'active');
+          document.getElementById('title').textContent = 'Connecting';
+          document.getElementById('msg').textContent = detail || 'Waiting for server to be ready...';
+          hideError();
+          startPolling();
+          break;
+
+        case 'restarting':
+          document.getElementById('title').textContent = 'Restarting';
+          document.getElementById('msg').textContent = detail || 'Restarting server...';
+          hideError();
+          break;
+
+        case 'ready':
+          setStep('step-db', 'done');
+          setStep('step-server', 'done');
+          setStep('step-connect', 'done');
+          document.getElementById('title').textContent = 'Ready';
+          document.getElementById('msg').textContent = 'Launching application...';
+          window.location.href = SERVER;
+          break;
+
+        case 'error':
+          document.getElementById('title').textContent = 'Startup Error';
+          document.getElementById('msg').textContent = 'Something went wrong during startup.';
+          if (error) showError(error);
+          // Mark failed step
+          if (!document.getElementById('step-db').classList.contains('done')) {
+            setStep('step-db', 'failed');
+          } else if (!document.getElementById('step-server').classList.contains('done')) {
+            setStep('step-server', 'failed');
+          } else {
+            setStep('step-connect', 'failed');
+          }
+          document.getElementById('actionBox').classList.remove('hidden');
+          break;
       }
     }
-    setTimeout(tryConnect, 500);
+
+    // Poll the server health endpoint
+    function startPolling() {
+      if (pollTimer) return;
+      attempts = 0;
+      poll();
+    }
+
+    function poll() {
+      attempts++;
+      document.getElementById('msg').textContent = 'Checking server... (attempt ' + attempts + ')';
+
+      fetch(SERVER + '/api/health', { signal: AbortSignal.timeout(3000) })
+        .then(r => {
+          if (r.ok) {
+            setStep('step-connect', 'done');
+            document.getElementById('title').textContent = 'Ready';
+            document.getElementById('msg').textContent = 'Launching application...';
+            window.location.href = SERVER;
+          } else {
+            scheduleNextPoll();
+          }
+        })
+        .catch(() => scheduleNextPoll());
+    }
+
+    function scheduleNextPoll() {
+      if (attempts >= 30) {
+        // After 30 attempts (45s), show error with retry
+        document.getElementById('title').textContent = 'Server Not Responding';
+        document.getElementById('msg').textContent = 'The server is taking too long to start.';
+        setStep('step-connect', 'failed');
+        document.getElementById('actionBox').classList.remove('hidden');
+        document.getElementById('spinner').style.display = 'none';
+        pollTimer = null;
+      } else {
+        pollTimer = setTimeout(poll, 1500);
+      }
+    }
+
+    async function handleRetry() {
+      if (isRestarting) return;
+      isRestarting = true;
+
+      const btn = document.getElementById('retryBtn');
+      btn.disabled = true;
+      btn.textContent = 'Restarting...';
+      hideError();
+      document.getElementById('actionBox').classList.add('hidden');
+
+      // Reset steps
+      setStep('step-db', 'active');
+      setStep('step-server', '');
+      setStep('step-connect', '');
+      document.getElementById('title').textContent = 'Restarting';
+      document.getElementById('msg').textContent = 'Restarting server...';
+      document.getElementById('spinner').style.display = 'block';
+      attempts = 0;
+
+      try {
+        if (window.electronAPI) {
+          const ok = await window.electronAPI.restartBackend();
+          if (ok) {
+            // Status updates will come via IPC → handleStartupStatus → redirect
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Restart failed:', e);
+      }
+
+      // Fallback: just keep polling
+      isRestarting = false;
+      btn.disabled = false;
+      btn.textContent = 'Restart Server';
+      setStep('step-db', 'done');
+      setStep('step-server', 'done');
+      setStep('step-connect', 'active');
+      startPolling();
+    }
+
+    // Wire up Electron IPC if available
+    if (window.electronAPI) {
+      window.electronAPI.onStartupStatus(handleStartupStatus);
+      // Ask main process for current state
+      window.electronAPI.getStartupState().then(state => {
+        if (state.logPath) {
+          const hint = document.getElementById('logHint');
+          hint.textContent = 'Log: ' + state.logPath;
+          hint.classList.remove('hidden');
+        }
+        if (state.error) {
+          handleStartupStatus({ phase: 'error', detail: state.error, error: state.error });
+        } else if (state.phase === 'ready' || state.backendRunning) {
+          handleStartupStatus({ phase: 'connecting', detail: 'Server is running, connecting...' });
+        }
+      }).catch(() => {
+        // Not in Electron or IPC failed — just poll
+        startPolling();
+      });
+    } else {
+      // Running outside Electron (direct browser access) — just poll
+      setStep('step-db', 'done');
+      setStep('step-server', 'done');
+      setStep('step-connect', 'active');
+      document.getElementById('title').textContent = 'Connecting to Server';
+      document.getElementById('msg').textContent = 'Looking for server...';
+      startPolling();
+    }
   </script>
 </body>
 </html>
