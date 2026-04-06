@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/sync_service.dart';
 import '../services/claude_service.dart';
+import '../services/network_service.dart';
+import 'connection_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -141,39 +143,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF9CA3AF))),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(Icons.dns_outlined, size: 18, color: Color(0xFF9CA3AF)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(ApiService.baseUrl,
-                            style: const TextStyle(fontSize: 13)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8, height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: sync.isOnline
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFF59E0B),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        sync.isOnline ? 'Connected' : 'Offline',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: sync.isOnline
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFF59E0B),
-                        ),
-                      ),
-                    ],
+                  Consumer<NetworkService>(
+                    builder: (ctx, net, _) {
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                net.isConnected
+                                    ? (net.isLanMode ? Icons.wifi : Icons.cloud_done)
+                                    : Icons.signal_wifi_off,
+                                size: 18,
+                                color: net.isConnected
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFFF59E0B),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  net.isConnected
+                                      ? '${net.isLanMode ? "LAN" : "Online"} — ${ApiService.baseUrl}'
+                                      : 'Not Connected',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.swap_horiz, size: 14, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Mode: ${net.connectionMode == "auto" ? "Auto-switch" : net.connectionMode.toUpperCase()}',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.settings_ethernet, size: 16),
+                              label: const Text('Connection Settings'),
+                              onPressed: () => Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => const ConnectionScreen())),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

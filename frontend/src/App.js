@@ -48,6 +48,7 @@ import HeldOrders from './pages/HeldOrders/HeldOrders';
 import TokenQueue from './pages/TokenQueue/TokenQueue';
 import Suppliers from './pages/Suppliers/Suppliers';
 import SystemModes from './pages/SystemModes/SystemModes';
+import AIAssistant from './pages/AIAssistant/AIAssistant';
 
 function App() {
   return (
@@ -164,6 +165,9 @@ function App() {
             } />
             <Route path="/system-modes" element={
               <ProtectedRoute roles={['admin', 'manager']}><SystemModes /></ProtectedRoute>
+            } />
+            <Route path="/ai-assistant" element={
+              <ProtectedRoute roles={['admin', 'manager']}><AIAssistant /></ProtectedRoute>
             } />
           </Route>
         </Routes>

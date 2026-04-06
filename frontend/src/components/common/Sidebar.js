@@ -8,7 +8,7 @@ import {
   FiTool, FiBriefcase, FiRefreshCw, FiActivity, FiClipboard,
   FiUserCheck, FiBox, FiAlertTriangle, FiCpu, FiChevronDown, FiChevronRight,
   FiClock, FiLayers, FiShield, FiDatabase, FiHash, FiTrendingUp, FiCreditCard,
-  FiPause, FiRotateCcw, FiZap
+  FiPause, FiRotateCcw, FiZap, FiMessageSquare
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -32,6 +32,7 @@ const Sidebar = () => {
       key: 'main',
       items: [
         { path: '/', icon: <FiHome />, label: 'Dashboard', roles: ['admin', 'manager', 'cashier', 'waiter'] },
+        { path: '/ai-assistant', icon: <FiMessageSquare />, label: 'AI Assistant', roles: ['admin', 'manager'] },
       ],
     },
     {

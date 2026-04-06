@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/network_service.dart';
+import 'connection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -100,14 +102,74 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: 40),
 
-                // Server config toggle
+                // Connection status + config
+                Consumer<NetworkService>(
+                  builder: (ctx, net, _) {
+                    return Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const ConnectionScreen())),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: net.isConnected
+                                  ? const Color(0xFF22C55E).withValues(alpha: 0.1)
+                                  : const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: net.isConnected
+                                    ? const Color(0xFF22C55E).withValues(alpha: 0.3)
+                                    : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  net.isConnected
+                                      ? (net.isLanMode ? Icons.wifi : Icons.cloud_done)
+                                      : Icons.signal_wifi_off,
+                                  size: 16,
+                                  color: net.isConnected
+                                      ? const Color(0xFF22C55E)
+                                      : const Color(0xFFF59E0B),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  net.isConnected
+                                      ? (net.isLanMode ? 'LAN Connected' : 'Online')
+                                      : 'Not Connected – Tap to setup',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: net.isConnected
+                                        ? const Color(0xFF22C55E)
+                                        : const Color(0xFFF59E0B),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Icon(Icons.arrow_forward_ios, size: 10,
+                                    color: net.isConnected
+                                        ? const Color(0xFF22C55E)
+                                        : const Color(0xFFF59E0B)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+                // Server config toggle (legacy manual entry)
                 TextButton.icon(
                   onPressed: () =>
                       setState(() => _showServerConfig = !_showServerConfig),
-                  icon: const Icon(Icons.wifi, size: 18),
+                  icon: const Icon(Icons.settings, size: 16),
                   label: Text(_showServerConfig
-                      ? 'Hide Server Config'
-                      : 'Server: ${ApiService.baseUrl.replaceFirst("/api", "")}'),
+                      ? 'Hide Manual Config'
+                      : 'Manual Server Config'),
+                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF6B7280)),
                 ),
 
                 if (_showServerConfig) ...[

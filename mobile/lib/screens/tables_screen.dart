@@ -54,8 +54,35 @@ class _TablesScreenState extends State<TablesScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MenuScreen()),
+          );
+        },
+        icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+        label: const Text('Takeaway'),
+        backgroundColor: const Color(0xFF6366F1),
+      ),
       body: Column(
         children: [
+          // Quick stats
+          if (!_loading && _tables.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  _statBadge('${_tables.where((t) => t['status'] == 'available').length}', 'Free', const Color(0xFF22C55E)),
+                  const SizedBox(width: 8),
+                  _statBadge('${_tables.where((t) => t['status'] == 'occupied').length}', 'Busy', const Color(0xFFF59E0B)),
+                  const SizedBox(width: 8),
+                  _statBadge('${_tables.where((t) => t['status'] == 'reserved').length}', 'Rsv', const Color(0xFF3B82F6)),
+                  const SizedBox(width: 8),
+                  _statBadge('${_tables.length}', 'Total', const Color(0xFF6B7280)),
+                ],
+              ),
+            ),
           // Filter chips
           SizedBox(
             height: 50,
@@ -98,6 +125,24 @@ class _TablesScreenState extends State<TablesScreen> {
     );
   }
 
+  Widget _statBadge(String count, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          children: [
+            Text(count, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: color)),
+            Text(label, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.8))),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _filterChip(String value, String label) {
     final selected = _filter == value;
     return Padding(
@@ -117,36 +162,87 @@ class _TablesScreenState extends State<TablesScreen> {
     final color = AppTheme.statusColor(status);
     final number = table['number']?.toString() ?? table['name'] ?? '?';
     final capacity = table['capacity'] ?? 4;
+    final isOccupied = status == 'occupied';
+
+    // Calculate time for occupied tables
+    String? timeLabel;
+    if (isOccupied && table['occupiedAt'] != null) {
+      try {
+        final occupiedAt = DateTime.parse(table['occupiedAt'].toString()).toLocal();
+        final diff = DateTime.now().difference(occupiedAt);
+        if (diff.inMinutes < 60) {
+          timeLabel = '${diff.inMinutes}m';
+        } else {
+          timeLabel = '${diff.inHours}h ${diff.inMinutes % 60}m';
+        }
+      } catch (_) {}
+    }
 
     return GestureDetector(
       onTap: () => _onTableTap(table),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withValues(alpha: 0.15),
+              color.withValues(alpha: 0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.4), width: 2),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.table_restaurant, color: color, size: 28),
-            const SizedBox(height: 4),
+            // Table icon with pulse for occupied
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(Icons.table_restaurant, color: color, size: 32),
+                if (isOccupied && timeLabel != null)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(timeLabel,
+                          style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: Colors.black)),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
             Text('T-$number',
                 style: TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 16, color: color)),
+                    fontWeight: FontWeight.w800, fontSize: 18, color: color)),
             const SizedBox(height: 2),
-            Text('$capacity seats',
-                style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.7))),
-            const SizedBox(height: 2),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.people_outline, size: 12, color: color.withValues(alpha: 0.7)),
+                const SizedBox(width: 3),
+                Text('$capacity',
+                    style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.7))),
+              ],
+            ),
+            const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(status.toUpperCase(),
-                  style: TextStyle(
-                      fontSize: 9, fontWeight: FontWeight.w700, color: color)),
+              child: Text(
+                isOccupied ? 'TAP TO VIEW' : status.toUpperCase(),
+                style: TextStyle(
+                    fontSize: 9, fontWeight: FontWeight.w700, color: color),
+              ),
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/sync_service.dart';
+import '../services/network_service.dart';
 import '../providers/order_provider.dart';
 import 'tables_screen.dart';
 import 'orders_screen.dart';
@@ -29,10 +30,41 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final sync = context.watch<SyncService>();
+    final net = context.watch<NetworkService>();
 
     return Scaffold(
       body: Column(
         children: [
+          // Network connection type indicator
+          if (net.isConnected && !sync.isSyncing && sync.isOnline)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              color: net.isLanMode
+                  ? const Color(0xFF22C55E).withValues(alpha: 0.08)
+                  : const Color(0xFF6366F1).withValues(alpha: 0.08),
+              child: SafeArea(
+                bottom: false,
+                child: Row(
+                  children: [
+                    Icon(
+                      net.isLanMode ? Icons.wifi : Icons.cloud_done,
+                      size: 14,
+                      color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      net.isLanMode ? 'LAN WiFi' : 'Online',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: net.isLanMode ? const Color(0xFF22C55E) : const Color(0xFF6366F1),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           // Offline / syncing banner
           if (!sync.isOnline)
             Container(
