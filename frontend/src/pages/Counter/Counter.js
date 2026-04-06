@@ -3,6 +3,7 @@ import api from '../../services/api';
 import useSocket from '../../hooks/useSocket';
 import { FiClock, FiDollarSign, FiCheck, FiAlertTriangle, FiDownload } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import './Counter.css';
 
 const downloadExport = async (url, filename) => {
   try {
@@ -15,7 +16,6 @@ const downloadExport = async (url, filename) => {
     toast.success('Downloaded ' + filename);
   } catch (err) { toast.error('Export failed'); }
 };
-import './Counter.css';
 
 const DENOMINATIONS = [
   { key: 'notes2000', label: '₹2000', value: 2000 },
