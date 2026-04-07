@@ -58,6 +58,8 @@ const loadTestRoutes = require('./routes/loadTest');
 const roleRoutes = require('./routes/roles');
 const approvalRoutes = require('./routes/approvals');
 const trackingRoutes = require('./routes/tracking');
+const draftRoutes = require('./routes/drafts');
+const systemHealthRoutes = require('./routes/systemHealth');
 const { serveImages, serveWastage } = require('./middleware/upload');
 
 const app = express();
@@ -153,6 +155,8 @@ app.use('/api/pin', pinRoutes);
 app.use('/api/load-test', loadTestRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/approvals', approvalRoutes);
+app.use('/api/drafts', draftRoutes);
+app.use('/api/system-health', systemHealthRoutes);
 
 // Public routes (no auth)
 app.use('/api/track', trackingRoutes);
@@ -197,6 +201,14 @@ app.use(errorHandler);
 
 // Setup socket events
 setupSockets(io);
+
+// Setup draft auto-save sockets
+const { setupDraftSockets } = require('./services/draftRecovery');
+setupDraftSockets(io);
+
+// Initialize background workers (event bus → job queue)
+const { initWorkers } = require('./services/workers');
+initWorkers(io);
 
 // Start background fraud monitor
 const { startFraudMonitor } = require('./services/fraudMonitor');

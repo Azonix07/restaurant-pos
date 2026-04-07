@@ -134,6 +134,33 @@ const ALERT_TYPES = {
   COMPANY_CREDIT_OVERDUE: 'company_credit_overdue',
 };
 
+// ─── Background Event Bus Events ─────────────────────────────
+const BUS_EVENTS = {
+  ORDER_CREATED: 'order:created',
+  ORDER_UPDATED: 'order:updated',
+  ORDER_STATUS_CHANGED: 'order:statusChanged',
+  ORDER_CANCELLED: 'order:cancelled',
+  PAYMENT_PROCESSED: 'payment:processed',
+  REFUND_PROCESSED: 'refund:processed',
+  KOT_GENERATED: 'kot:generated',
+  BILL_DELETED: 'bill:deleted',
+  STOCK_DEDUCTED: 'stock:deducted',
+  STOCK_LOW: 'stock:low',
+  WASTAGE_LOGGED: 'wastage:logged',
+  DRAFT_SAVED: 'draft:saved',
+  CRASH_RECOVERED: 'crash:recovered',
+  SYNC_PUSHED: 'sync:pushed',
+};
+
+// ─── Job Types ───────────────────────────────────────────────
+const JOB_TYPES = {
+  SYNC_PUSH: 'sync_push',
+  FRAUD_SCORE: 'fraud_score',
+  REPORT_UPDATE: 'report_update',
+  STOCK_ALERT_CHECK: 'stock_alert_check',
+  INSIGHTS_COMPUTE: 'insights_compute',
+};
+
 module.exports = {
   ORDER_STATUS,
   PAYMENT_METHODS,
@@ -148,4 +175,6 @@ module.exports = {
   KOT_STATUS,
   STOCK_MOVEMENT,
   ALERT_TYPES,
+  BUS_EVENTS,
+  JOB_TYPES,
 };

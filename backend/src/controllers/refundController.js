@@ -4,6 +4,7 @@ const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const BillSequence = require('../models/BillSequence');
+const { eventBus, EVENTS } = require('../services/eventBus');
 
 // Request a refund (cashier/manager can request, manager/admin must approve)
 exports.requestRefund = async (req, res, next) => {
@@ -141,6 +142,17 @@ exports.approveRefund = async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io) io.emit('refund:approved', { refund });
+
+    // Event bus — triggers fraud scoring for the requester
+    eventBus.emitEvent(EVENTS.REFUND_PROCESSED, {
+      refundId: refund._id,
+      orderId: refund.order,
+      amount: refund.refundAmount,
+      type: refund.type,
+      userId: refund.requestedBy,
+      userName: refund.requestedByName,
+      approvedBy: req.user.name,
+    });
 
     res.json({ refund, message: 'Refund approved and processed' });
   } catch (error) {

@@ -9,6 +9,7 @@ const { GST_RATES } = require('../../../shared/constants');
 const kotController = require('./kotController');
 const stockController = require('./stockController');
 const customerController = require('./customerController');
+const { eventBus, EVENTS } = require('../services/eventBus');
 
 const getGstRate = (gstCategory) => {
   const map = {
@@ -76,6 +77,18 @@ exports.create = async (req, res, next) => {
       io.emit('kitchen:update', populated);
       if (table) io.emit('table:update', table);
     }
+
+    // Event bus — non-blocking background processing
+    eventBus.emitEvent(EVENTS.ORDER_CREATED, {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      userId: req.user?._id,
+      userName: req.user?.name,
+      tableId: tableId,
+      type: order.type,
+      total: order.total,
+      itemCount: order.items.length,
+    });
 
     res.status(201).json({ order: populated, kots });
   } catch (error) {
@@ -193,6 +206,12 @@ exports.updateStatus = async (req, res, next) => {
         io.emit('table:update', updatedTable);
       }
     }
+
+    // Event bus — status change (including cancellations)
+    eventBus.emitEvent(
+      status === 'cancelled' ? EVENTS.ORDER_CANCELLED : EVENTS.ORDER_STATUS_CHANGED,
+      { orderId: order._id, orderNumber: order.orderNumber, status, userId: req.user?._id, userName: req.user?.name }
+    );
 
     res.json({ order });
   } catch (error) {
@@ -463,6 +482,18 @@ exports.processPayment = async (req, res, next) => {
       io.emit('order:statusChange', { orderId: order._id, status: 'completed' });
       io.emit('order:paid', { order });
     }
+
+    // Event bus — payment processed (triggers fraud, report, sync workers)
+    eventBus.emitEvent(EVENTS.PAYMENT_PROCESSED, {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      billNumber: order.billNumber,
+      total: order.total,
+      discount: order.discount,
+      paymentMethod,
+      userId: req.user._id,
+      userName: req.user.name,
+    });
 
     // Audit log for payment
     await AuditLog.create({

@@ -4,6 +4,7 @@ const StockMovement = require('../models/StockMovement');
 const AlertLog = require('../models/AlertLog');
 const Order = require('../models/Order');
 const bcrypt = require('bcryptjs');
+const { eventBus, EVENTS } = require('../services/eventBus');
 
 // Report wastage
 exports.create = async (req, res, next) => {
@@ -78,6 +79,16 @@ exports.approve = async (req, res, next) => {
     }
 
     res.json({ entry, message: 'Wastage approved and stock deducted' });
+
+    // Emit wastage event for background fraud + stock workers
+    eventBus.emitEvent(EVENTS.WASTAGE_LOGGED, {
+      entryId: entry._id,
+      materialId: entry.rawMaterial,
+      quantity: entry.quantity,
+      cost: entry.estimatedCost,
+      userId: req.user._id,
+      userName: req.user.name,
+    });
   } catch (error) {
     next(error);
   }

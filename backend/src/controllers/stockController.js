@@ -2,6 +2,7 @@ const RawMaterial = require('../models/RawMaterial');
 const Recipe = require('../models/Recipe');
 const StockMovement = require('../models/StockMovement');
 const AlertLog = require('../models/AlertLog');
+const { eventBus, EVENTS } = require('../services/eventBus');
 
 // ============ RAW MATERIALS ============
 
@@ -214,6 +215,10 @@ exports.deductStockForOrder = async (orderItems, userId) => {
         });
       }
     }
+  }
+  // Emit stock deduction event for background workers
+  if (movements.length > 0) {
+    eventBus.emitEvent(EVENTS.STOCK_DEDUCTED, { movementCount: movements.length, userId });
   }
   return movements;
 };
